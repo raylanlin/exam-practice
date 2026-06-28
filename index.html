@@ -904,29 +904,24 @@ async function renderExam(view, examId, opts = {}) {
       });
     }
 
-    // 选项绑定（锁定状态下不绑事件）
-    if (q.type === 'single' && !isReviewed && !isRevealed) {
-      $$('.option', view).forEach(opt => {
-        opt.addEventListener('click', () => {
+    // 选项绑定：用 change 事件（避免 label click + input click 双重 toggle 导致多选不响应）
+    if ((q.type === 'single' || q.type === 'multiple') && !isReviewed && !isRevealed) {
+      const inputs = q.type === 'single'
+        ? $$('input[type=radio]', view)
+        : $$('input[type=checkbox]', view);
+      inputs.forEach(inp => {
+        inp.addEventListener('change', (e) => {
+          const opt = e.target.closest('.option');
           const idx = +opt.dataset.idx;
-          answers[q.id] = [idx];
-          $$('.option', view).forEach(o => o.classList.toggle('selected', +o.dataset.idx === idx));
-          $$('input[type=radio]', view).forEach((r, i) => r.checked = i === idx);
-          if (mode === 'practice') {
-            // 练习模式：选中后自动判（但用户也可以改）
-            // 这里不立即判，需要点「完成本题」才判
+          if (q.type === 'single') {
+            answers[q.id] = [idx];
+            $$('.option', view).forEach(o => o.classList.toggle('selected', +o.dataset.idx === idx));
+          } else {
+            const cur = new Set(answers[q.id] || []);
+            if (e.target.checked) cur.add(idx); else cur.delete(idx);
+            answers[q.id] = [...cur].sort((a,b)=>a-b);
+            opt.classList.toggle('selected', e.target.checked);
           }
-        });
-      });
-    } else if (q.type === 'multiple' && !isReviewed && !isRevealed) {
-      $$('.option', view).forEach(opt => {
-        opt.addEventListener('click', () => {
-          const idx = +opt.dataset.idx;
-          const cur = new Set(answers[q.id] || []);
-          if (cur.has(idx)) cur.delete(idx); else cur.add(idx);
-          answers[q.id] = [...cur].sort((a,b)=>a-b);
-          opt.classList.toggle('selected', cur.has(idx));
-          opt.querySelector('input').checked = cur.has(idx);
         });
       });
     } else if (q.type === 'blank' && !isReviewed && !isRevealed) {
@@ -1294,10 +1289,20 @@ function showQuestion(){
   \$\$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;showQuestion()});
   const fb2=\$('#btn-finish');
   if(fb2){fb2.onclick=()=>{if(state.answers[q.id]===undefined){alert('请先作答');return;}state.reviewed[q.id]=true;showQuestion();};}
-  if(q.type==='single'&&!isRev&&!isRevealed){
-    \$\$('.option').forEach(opt=>opt.onclick=()=>{const i=+opt.dataset.idx;state.answers[q.id]=[i];\$\$('.option').forEach(o=>o.classList.toggle('selected',+o.dataset.idx===i));});
-  }else if(q.type==='multiple'&&!isRev&&!isRevealed){
-    \$\$('.option').forEach(opt=>opt.onclick=()=>{const i=+opt.dataset.idx;const cur=new Set(state.answers[q.id]||[]);cur.has(i)?cur.delete(i):cur.add(i);state.answers[q.id]=[...cur].sort((a,b)=>a-b);opt.classList.toggle('selected',cur.has(i));});
+  if((q.type==='single'||q.type==='multiple')&&!isRev&&!isRevealed){
+    const inputs=q.type==='single'?\$$('input[type=radio]'):\$$('input[type=checkbox]');
+    inputs.forEach(inp=>inp.addEventListener('change',(e)=>{
+      const opt=e.target.closest('.option');const i=+opt.dataset.idx;
+      if(q.type==='single'){
+        state.answers[q.id]=[i];
+        \$\$('.option').forEach(o=>o.classList.toggle('selected',+o.dataset.idx===i));
+      }else{
+        const cur=new Set(state.answers[q.id]||[]);
+        if(e.target.checked)cur.add(i);else cur.delete(i);
+        state.answers[q.id]=[...cur].sort((a,b)=>a-b);
+        opt.classList.toggle('selected',e.target.checked);
+      }
+    }));
   }else if(q.type==='blank'&&!isRev&&!isRevealed){
     \$\$('.blank-input').forEach(inp=>inp.oninput=()=>{const bi=+inp.dataset.bi;const cur=state.answers[q.id]||(q.blanks||[]).map(()=>'');cur[bi]=inp.value;state.answers[q.id]=cur;});
   }
