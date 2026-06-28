@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "exams": [
+    {
+      "id": "demo",
+      "file": "demo.json",
+      "title": "考前刷题 Demo（单选/多选/填空）",
+      "subject": "Demo",
+      "examDate": "",
+      "duration": 10,
+      "questionCount": 0,
+      "description": "覆盖三种题型的演示卷，方便先验证流程"
+    }
+  ]
+}
