@@ -1,6 +1,6 @@
 ---
 name: exam-practice-filler
-description: 当 Raylan 或咪大王提供试卷材料（图片 / PDF / 文本 / 已有 JSON / Word / Excel / 微信聊天截图）要填充到「考前刷题」系统时使用。教 agent 规范化识别题目、转为 JSON 格式、注册到题库、推送部署上线。
+description: 当用户提供试卷材料（图片 / PDF / 文本 / 已有 JSON / Word / Excel / 微信聊天截图）要填充到「考前刷题」系统时使用。教 agent 规范化识别题目、转为 JSON 格式、注册到题库、推送部署上线。
 user-invocable: true
 ---
 
@@ -109,7 +109,7 @@ user-invocable: true
 | `title` | 可读中文 | `Monash FIT1045 算法与数据结构 2026 S1 期中模拟` |
 | `q.id` | `q1`、`q2`、...，题号顺序连续 | `q1`, `q2`, `q15` |
 
-如果用户给的是「咪大王某次小测」，建议命名：`gdufe-<科目>-<日期>-<类型>`，例如 `gdufe-jicheng-2026-06-15-quiz`。
+如果用户给的是「某次小测」，建议命名：`<来源>-<科目>-<日期>-<类型>`，例如 `gdufe-jicheng-2026-06-15-quiz`。
 
 ### 5. 注册到 `data/manifest.json`
 
@@ -207,7 +207,7 @@ GitHub Pages 通常 1–2 分钟生效。完成后**必须**访问 https://rayla
 
 ## 完整示例
 
-**用户输入：** 咪大王发来一张小测截图，标题「数字逻辑 第3章 小测」，共 10 题，前 5 题单选，后 5 题多选，答案写在题目下方。
+**用户输入：** 用户发来一张小测截图，标题「数字逻辑 第3章 小测」，共 10 题，前 5 题单选，后 5 题多选，答案写在题目下方。
 
 **Agent 流程：**
 
@@ -218,7 +218,7 @@ GitHub Pages 通常 1–2 分钟生效。完成后**必须**访问 https://rayla
 5. 校验：JSON 合法、索引未越界、manifest 无重复
 6. `git add + commit + push`
 7. 访问网页验证
-8. 报告给咪大王
+8. 报告给用户
 
 ---
 
