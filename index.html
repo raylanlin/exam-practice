@@ -1,1361 +1,981 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#4a7dff" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#121315" media="(prefers-color-scheme: dark)" />
 <title>考前刷题</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E" />
-<style>
-  :root {
-    --c-bg: #f7f8fb;
-    --c-surface: #ffffff;
-    --c-surface-2: #f0f2f7;
-    --c-border: #e3e6ee;
-    --c-text: #1a1d29;
-    --c-text-2: #5a6075;
-    --c-text-3: #8b91a3;
-    --c-primary: #4a7dff;
-    --c-primary-2: #2f5dd1;
-    --c-success: #3ec177;
-    --c-danger: #e15c5c;
-    --c-warning: #f5b740;
-    --radius: 12px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 3px rgba(20,30,60,.06), 0 4px 16px rgba(20,30,60,.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --c-bg: #14161e;
-      --c-surface: #1c1f2a;
-      --c-surface-2: #252937;
-      --c-border: #2f3344;
-      --c-text: #ecedf2;
-      --c-text-2: #b1b6c7;
-      --c-text-3: #7a8095;
-      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
-    }
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--c-bg); color: var(--c-text); }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    line-height: 1.55;
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: var(--c-primary); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230f9d63'/%3E%3Cg fill='none' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M27 38l7 7 12-13'/%3E%3Cpath d='M27 66l7 7 12-13'/%3E%3Cline x1='58' y1='37' x2='78' y2='37'/%3E%3Cline x1='58' y1='65' x2='78' y2='65'/%3E%3C/g%3E%3C/svg%3E" />
+<script>
+/* pre-paint theme to avoid flash */
+(function(){try{var p=localStorage.getItem('exam-practice:theme');var d=(p==='light'||p==='dark')?p:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',d);}catch(e){}})();
+</script>
+<style id="app-css">
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --surface-2:#eceef0; --surface-3:#e1e4e7;
+  --border:#e0e2e5; --border-strong:#cbced3;
+  --text:#191c20; --text-2:#555b62; --text-3:#8a8f98;
+  --primary:#0f9d63; --primary-strong:#0b8052; --on-primary:#ffffff;
+  --primary-soft:rgba(15,157,99,.12); --primary-ring:rgba(15,157,99,.24);
+  --success:#18925a; --success-soft:rgba(24,146,90,.14);
+  --danger:#d6584e; --danger-soft:rgba(214,88,78,.12);
+  --warning:#cf9015; --warning-soft:rgba(207,144,21,.15);
+  --shadow-sm:0 1px 2px rgba(20,22,28,.05);
+  --shadow:0 2px 6px rgba(20,22,28,.06), 0 8px 24px rgba(20,22,28,.05);
+  --shadow-lg:0 8px 30px rgba(20,22,28,.14);
+  --radius:16px; --radius-sm:11px; --radius-xs:8px;
+  --maxw:760px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --dot:rgba(25,28,34,.05); --glow:color-mix(in srgb, var(--primary) 7%, transparent);
+}
+[data-theme="dark"]{
+  --bg:#121315; --surface:#1c1e21; --surface-2:#26282c; --surface-3:#313438;
+  --border:#303237; --border-strong:#43464c;
+  --text:#e8e9eb; --text-2:#a7abb1; --text-3:#767a81;
+  --primary:#34c98a; --primary-strong:#4dd69b; --on-primary:#06140d;
+  --primary-soft:rgba(52,201,138,.15); --primary-ring:rgba(52,201,138,.3);
+  --success:#3fc287; --success-soft:rgba(63,194,135,.16);
+  --danger:#e07b6f; --danger-soft:rgba(224,123,111,.16);
+  --warning:#d8b063; --warning-soft:rgba(216,176,99,.18);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 2px 6px rgba(0,0,0,.34), 0 8px 24px rgba(0,0,0,.26);
+  --shadow-lg:0 10px 34px rgba(0,0,0,.5);
+  --dot:rgba(255,255,255,.04); --glow:color-mix(in srgb, var(--primary) 11%, transparent);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{background:var(--bg)}
+body{
+  background-color:var(--bg); color:var(--text);
+  background-image:
+    radial-gradient(135% 78% at 50% -16%, var(--glow), transparent 56%),
+    radial-gradient(var(--dot) 1.2px, transparent 1.8px);
+  background-size:auto, 22px 22px;
+  background-repeat:no-repeat, repeat;
+  background-attachment:fixed;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  line-height:1.6; min-height:100dvh; -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  transition:background .3s ease, color .3s ease;
+}
+a{color:var(--primary);text-decoration:none}
+button{font-family:inherit}
+::selection{background:var(--primary-soft)}
+.mono{font-family:ui-monospace,"SF Mono","JetBrains Mono","Menlo",monospace}
 
-  .container {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 24px 20px 80px;
-  }
+/* ---------- App shell ---------- */
+.app-header{
+  position:sticky; top:0; z-index:40;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter:saturate(1.4) blur(12px); backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom:1px solid transparent;
+  transition:border-color .2s;
+}
+.app-header.scrolled{border-bottom-color:var(--border)}
+.app-header-in{
+  max-width:var(--maxw); margin:0 auto; padding:12px 18px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
+.brand-mark{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  background:var(--primary);color:var(--on-primary);
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;
+}
+.brand-name{font-size:17px;font-weight:650;letter-spacing:.2px;white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:8px}
+.header-meta{color:var(--text-3);font-size:12.5px;white-space:nowrap}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
+  transition:background .15s,border-color .15s,transform .06s;
+}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.icon-btn:active{transform:scale(.94)}
 
-  header.app-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
-  .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
-  .brand-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--c-primary), #7da3ff);
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 20px;
-  }
-  .header-meta { color: var(--c-text-3); font-size: 13px; }
+.container{max-width:var(--maxw);margin:0 auto;padding:22px 18px calc(40px + var(--safe-b))}
 
-  .hero {
-    background: linear-gradient(135deg, var(--c-primary), #7da3ff);
-    color: white;
-    border-radius: var(--radius);
-    padding: 24px 22px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow);
-  }
-  .hero h1 { margin: 0 0 6px; font-size: 22px; }
-  .hero p { margin: 0; opacity: .9; font-size: 14px; }
+/* ---------- Buttons ---------- */
+.btn{
+  cursor:pointer;border:1px solid transparent;background:var(--primary);color:var(--on-primary);
+  padding:11px 18px;border-radius:var(--radius-sm);font-size:14.5px;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  transition:background .15s,border-color .15s,transform .06s,opacity .15s;
+  min-height:44px; white-space:nowrap;
+}
+.btn:hover{background:var(--primary-strong)}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn.ghost:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.btn.subtle{background:var(--surface-2);color:var(--text);border-color:transparent}
+.btn.subtle:hover{background:var(--surface-3)}
+.btn.warn{background:var(--warning);color:#fff}
+.btn.warn:hover{filter:brightness(.94)}
+.btn.success{background:var(--success);color:#fff}
+.btn.success:hover{filter:brightness(.95)}
+.btn.sm{padding:8px 13px;min-height:38px;font-size:13.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 
-  /* ===== Exam list (home) ===== */
-  .exam-list { display: flex; flex-direction: column; gap: 12px; }
-  .exam-card {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: transform .12s, box-shadow .12s, border-color .12s;
-  }
-  .exam-card:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow);
-    border-color: var(--c-primary);
-  }
-  .exam-card-title { font-size: 17px; font-weight: 600; }
-  .exam-card-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--c-text-2); font-size: 13px; }
-  .exam-card-meta .chip {
-    background: var(--c-surface-2);
-    color: var(--c-text-2);
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-  }
-  .exam-card-desc { color: var(--c-text-2); font-size: 14px; }
-  .exam-card-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+/* ---------- Home ---------- */
+.hero{
+  margin-bottom:22px;
+}
+.hero h1{margin:0 0 8px;font-size:clamp(22px,5vw,29px);font-weight:700;letter-spacing:-.4px}
+.hero p{margin:0;color:var(--text-2);font-size:15px;max-width:46ch}
+.exam-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.exam-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;display:flex;flex-direction:column;gap:12px;
+  box-shadow:var(--shadow-sm);transition:transform .14s,box-shadow .14s,border-color .14s;
+}
+.exam-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--border-strong)}
+.exam-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.exam-card-title{font-size:18px;font-weight:650;letter-spacing:-.2px;line-height:1.35}
+.score-ring{flex-shrink:0;text-align:center;line-height:1.1}
+.score-ring .n{font-size:19px;font-weight:750;color:var(--primary)}
+.score-ring .l{font-size:10.5px;color:var(--text-3)}
+.exam-card-meta{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  background:var(--surface-2);color:var(--text-2);padding:3px 11px;border-radius:999px;
+  font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;
+}
+.exam-card-desc{color:var(--text-2);font-size:14px;line-height:1.55}
+.exam-card-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:2px}
+.exam-card-actions .btn{flex:0 0 auto}
 
-  button, .btn {
-    cursor: pointer;
-    border: 0;
-    background: var(--c-primary);
-    color: white;
-    padding: 10px 18px;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-weight: 500;
-    transition: background .12s, transform .05s;
-    font-family: inherit;
-  }
-  button:hover, .btn:hover { background: var(--c-primary-2); }
-  button:active, .btn:active { transform: scale(.98); }
-  button.ghost, .btn.ghost {
-    background: transparent;
-    color: var(--c-text);
-    border: 1px solid var(--c-border);
-  }
-  button.ghost:hover, .btn.ghost:hover {
-    background: var(--c-surface-2);
-    color: var(--c-text);
-  }
-  button:disabled { opacity: .5; cursor: not-allowed; }
+/* ---------- Quiz ---------- */
+.quiz-top{margin-bottom:14px}
+.quiz-top-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+.back-link{
+  display:inline-flex;align-items:center;gap:6px;color:var(--text-2);font-size:13.5px;
+  padding:7px 10px;border-radius:9px;cursor:pointer;transition:background .12s;
+}
+.back-link:hover{background:var(--surface-2);color:var(--text)}
+.quiz-title{font-weight:650;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px;gap:2px}
+.seg button{
+  border:0;background:transparent;color:var(--text-2);cursor:pointer;
+  padding:7px 15px;border-radius:999px;font-size:13px;font-weight:600;min-height:34px;
+  transition:background .15s,color .15s;
+}
+.seg button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.seg button:not(.active):hover{color:var(--text)}
 
-  /* ===== Quiz page ===== */
-  .progress-bar {
-    background: var(--c-surface-2);
-    border-radius: 999px;
-    height: 6px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-  .progress-bar-fill {
-    background: linear-gradient(90deg, var(--c-primary), var(--c-success));
-    height: 100%;
-    width: 0%;
-    transition: width .25s;
-  }
-  .progress-meta {
-    display: flex; justify-content: space-between;
-    color: var(--c-text-3); font-size: 13px; margin-bottom: 18px;
-  }
-  .question-card {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 22px 22px 18px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-  }
-  .question-type {
-    display: inline-block;
-    font-size: 11px;
-    color: var(--c-primary);
-    background: rgba(74,125,255,.10);
-    padding: 2px 10px;
-    border-radius: 999px;
-    margin-bottom: 10px;
-    font-weight: 600;
-    letter-spacing: .5px;
-  }
-  .question-type.multiple { color: var(--c-warning); background: rgba(245,183,64,.12); }
-  .question-type.blank { color: var(--c-success); background: rgba(62,193,119,.12); }
-  .question-text { font-size: 16px; font-weight: 500; margin: 0 0 16px; white-space: pre-wrap; }
-  .options { display: flex; flex-direction: column; gap: 8px; }
-  .option {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 14px;
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background .1s, border-color .1s;
-    background: var(--c-surface);
-  }
-  .option:hover { background: var(--c-surface-2); }
-  .option.selected { background: rgba(74,125,255,.08); border-color: var(--c-primary); }
-  .option input { margin-top: 4px; flex-shrink: 0; accent-color: var(--c-primary); }
-  .option-label { flex: 1; }
-  .option-key {
-    color: var(--c-text-3);
-    font-weight: 600;
-    margin-right: 8px;
-    font-family: ui-monospace, "JetBrains Mono", monospace;
-  }
-  .option.selected .option-key { color: var(--c-primary); }
-  .blank-area { display: flex; flex-direction: column; gap: 12px; }
-  .blank-row {
-    display: flex; align-items: center; gap: 12px;
-    color: var(--c-text-2); font-size: 14px;
-  }
-  .blank-index {
-    flex-shrink: 0;
-    width: 28px; height: 28px;
-    background: var(--c-surface-2);
-    color: var(--c-text-2);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 600; font-size: 13px;
-  }
-  .blank-input {
-    flex: 1;
-    border: 1px solid var(--c-border);
-    background: var(--c-surface);
-    color: var(--c-text);
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 15px;
-    font-family: inherit;
-    transition: border-color .12s, box-shadow .12s;
-  }
-  .blank-input:focus {
-    outline: 0;
-    border-color: var(--c-primary);
-    box-shadow: 0 0 0 3px rgba(74,125,255,.15);
-  }
-  .blank-preview {
-    margin-top: 14px;
-    padding: 12px 14px;
-    background: var(--c-surface-2);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    color: var(--c-text-2);
-    white-space: pre-wrap;
-  }
-  .blank-preview b { color: var(--c-text); }
-  .quiz-actions {
-    display: flex; justify-content: space-between;
-    gap: 10px; flex-wrap: wrap; margin-top: 18px;
-  }
-  .quiz-actions .right { display: flex; gap: 10px; flex-wrap: wrap; }
+.redo-banner,.resume-banner{
+  border-radius:var(--radius-sm);padding:11px 15px;margin-bottom:13px;
+  font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:10px;line-height:1.45;
+}
+.redo-banner{background:var(--warning-soft);color:var(--text);border:1px solid color-mix(in srgb,var(--warning) 35%,transparent)}
+.resume-banner{background:var(--primary-soft);color:var(--text);border:1px solid color-mix(in srgb,var(--primary) 30%,transparent);justify-content:space-between}
+.resume-banner .btn{flex-shrink:0}
 
-  /* ===== Result page ===== */
-  .score-card {
-    background: linear-gradient(135deg, var(--c-primary), #7da3ff);
-    color: white;
-    border-radius: var(--radius);
-    padding: 26px 22px;
-    text-align: center;
-    margin-bottom: 22px;
-    box-shadow: var(--shadow);
-  }
-  .score-num { font-size: 56px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-  .score-sub { opacity: .92; font-size: 14px; }
-  .result-question {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow);
-  }
-  .result-question.correct { border-left: 4px solid var(--c-success); }
-  .result-question.wrong { border-left: 4px solid var(--c-danger); }
-  .result-question .head {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
-  }
-  .result-question .badge {
-    font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px;
-  }
-  .badge.correct { background: rgba(62,193,119,.15); color: var(--c-success); }
-  .badge.wrong { background: rgba(225,92,92,.15); color: var(--c-danger); }
-  .result-question .qtext { font-weight: 500; margin-bottom: 10px; white-space: pre-wrap; }
-  .result-question .line {
-    font-size: 13px; color: var(--c-text-2); margin: 4px 0;
-  }
-  .result-question .line b { color: var(--c-text); }
-  .result-question .explain {
-    margin-top: 8px; padding: 10px 12px;
-    background: var(--c-surface-2);
-    border-radius: var(--radius-sm);
-    font-size: 13px; color: var(--c-text-2);
-  }
+.progress-wrap{margin-bottom:16px}
+.progress-track{background:var(--surface-2);border-radius:999px;height:7px;overflow:hidden}
+.progress-fill{background:var(--primary);height:100%;width:0;border-radius:999px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+.progress-meta{display:flex;justify-content:space-between;color:var(--text-3);font-size:12.5px;margin-top:7px}
+.progress-meta .now{color:var(--text-2);font-weight:600}
 
-  .empty {
-    text-align: center; padding: 50px 20px;
-    color: var(--c-text-3);
-  }
-  .empty .ico { font-size: 48px; margin-bottom: 12px; }
+.q-scroll{touch-action:pan-y}
+.question-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px 22px;box-shadow:var(--shadow-sm);
+}
+.q-type{
+  display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.4px;
+  padding:3px 11px;border-radius:999px;margin-bottom:13px;
+  color:var(--primary);background:var(--primary-soft);
+}
+.q-type.multiple{color:var(--warning);background:var(--warning-soft)}
+.q-type.blank{color:var(--success);background:var(--success-soft)}
+.q-flag{
+  float:right;cursor:pointer;color:var(--text-3);font-size:19px;line-height:1;
+  padding:2px 6px;border-radius:8px;transition:color .15s,background .15s;user-select:none;
+}
+.q-flag:hover{background:var(--surface-2)}
+.q-flag.on{color:var(--warning)}
+.question-text{font-size:17.5px;font-weight:550;margin:0 0 18px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.options{display:flex;flex-direction:column;gap:9px}
+.option{
+  display:flex;align-items:flex-start;gap:12px;padding:13px 15px;
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);
+  transition:background .12s,border-color .12s;position:relative;
+}
+.option:hover{background:var(--surface-2)}
+.option .ctrl{
+  flex-shrink:0;width:22px;height:22px;border:2px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;margin-top:1px;color:transparent;
+  font-size:13px;font-weight:800;transition:all .12s;
+}
+.option .ctrl.radio{border-radius:50%}
+.option .ctrl.check{border-radius:6px}
+.option.selected{background:var(--primary-soft);border-color:var(--primary)}
+.option.selected .ctrl{border-color:var(--primary);background:var(--primary);color:var(--on-primary)}
+.option-body{flex:1;min-width:0}
+.option-key{color:var(--text-3);font-weight:700;margin-right:8px;font-size:14px}
+.option.selected .option-key{color:var(--primary)}
+.option-text{font-size:15.5px;line-height:1.5;word-break:break-word}
+.option.locked{pointer-events:none}
+.option.correct-opt{background:var(--success-soft);border-color:var(--success)}
+.option.correct-opt .ctrl{border-color:var(--success);background:var(--success);color:#fff}
+.option.correct-opt .option-key{color:var(--success)}
+.option.wrong-opt{background:var(--danger-soft);border-color:var(--danger)}
+.option.wrong-opt .ctrl{border-color:var(--danger);background:var(--danger);color:#fff}
+.option.wrong-opt .option-key{color:var(--danger)}
 
-  .toast {
-    position: fixed; bottom: 30px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(20,30,60,.92); color: white;
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-size: 13px;
-    opacity: 0;
-    transition: opacity .2s;
-    pointer-events: none;
-    z-index: 1000;
-  }
-  .toast.show { opacity: 1; }
+.blank-area{display:flex;flex-direction:column;gap:11px}
+.blank-row{display:flex;align-items:center;gap:11px}
+.blank-index{
+  flex-shrink:0;width:27px;height:27px;background:var(--surface-2);color:var(--text-2);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+}
+.blank-input{
+  flex:1;min-width:0;border:1.5px solid var(--border);background:var(--surface);color:var(--text);
+  padding:11px 14px;border-radius:var(--radius-sm);font-size:16px;font-family:inherit;
+  transition:border-color .12s,box-shadow .12s;
+}
+.blank-input:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.blank-input.locked{pointer-events:none}
+.blank-input.correct-blank{border-color:var(--success);background:var(--success-soft)}
+.blank-input.wrong-blank{border-color:var(--danger);background:var(--danger-soft)}
+.blank-preview{
+  margin-top:15px;padding:12px 14px;background:var(--surface-2);border-radius:var(--radius-sm);
+  font-size:14px;color:var(--text-2);white-space:pre-wrap;line-height:1.6;
+}
+.blank-preview b{color:var(--text)}
 
-  /* ===== 模式 toggle / 反馈区 / 错题重做 ===== */
-  .mode-toggle {
-    display: inline-flex;
-    background: var(--c-surface-2);
-    border-radius: 999px;
-    padding: 3px;
-    font-size: 13px;
-  }
-  .mode-toggle button {
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--c-text-2);
-    font-weight: 500;
-    font-size: 13px;
-  }
-  .mode-toggle button.active {
-    background: var(--c-primary);
-    color: white;
-  }
-  .mode-toggle button:hover:not(.active) { background: rgba(74,125,255,.08); color: var(--c-text); }
+.feedback{margin-top:18px;padding:15px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6}
+.feedback.correct{background:var(--success-soft);border:1px solid color-mix(in srgb,var(--success) 35%,transparent)}
+.feedback.wrong{background:var(--danger-soft);border:1px solid color-mix(in srgb,var(--danger) 35%,transparent)}
+.feedback.revealed{background:var(--warning-soft);border:1px solid color-mix(in srgb,var(--warning) 35%,transparent)}
+.fb-title{font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:7px;font-size:14.5px}
+.feedback.correct .fb-title{color:var(--success)}
+.feedback.wrong .fb-title{color:var(--danger)}
+.feedback.revealed .fb-title{color:var(--warning)}
+.fb-line{font-size:13.5px;margin:4px 0;color:var(--text-2)}
+.fb-line b{color:var(--text)}
+.fb-explain{margin-top:9px;padding:10px 12px;background:color-mix(in srgb,var(--surface) 60%,transparent);border-radius:var(--radius-xs);font-size:13.5px;color:var(--text-2);line-height:1.6}
+[data-theme="dark"] .fb-explain{background:rgba(0,0,0,.22)}
+.fb-retry{margin-top:12px}
 
-  .feedback {
-    margin-top: 16px;
-    padding: 14px 16px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .feedback.correct {
-    background: rgba(62,193,119,.10);
-    border: 1px solid rgba(62,193,119,.35);
-    color: var(--c-text);
-  }
-  .feedback.wrong {
-    background: rgba(225,92,92,.08);
-    border: 1px solid rgba(225,92,92,.35);
-    color: var(--c-text);
-  }
-  .feedback.revealed {
-    background: rgba(245,183,64,.10);
-    border: 1px solid rgba(245,183,64,.35);
-    color: var(--c-text);
-  }
-  .feedback-title { font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-  .feedback-line { font-size: 13px; margin: 4px 0; color: var(--c-text-2); }
-  .feedback-line b { color: var(--c-text); }
-  .feedback .explain {
-    margin-top: 8px; padding: 8px 10px;
-    background: rgba(255,255,255,.4);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-  }
-  @media (prefers-color-scheme: dark) {
-    .feedback .explain { background: rgba(0,0,0,.25); }
-  }
-  .option.locked { pointer-events: none; opacity: .85; }
-  .option.correct-opt { background: rgba(62,193,119,.15); border-color: var(--c-success); }
-  .option.wrong-opt { background: rgba(225,92,92,.10); border-color: var(--c-danger); }
-  .blank-input.locked { background: var(--c-surface-2); pointer-events: none; }
-  .blank-input.correct-blank { border-color: var(--c-success); background: rgba(62,193,119,.10); }
-  .blank-input.wrong-blank { border-color: var(--c-danger); background: rgba(225,92,92,.08); }
+/* sticky action bar */
+.action-bar{
+  position:sticky;bottom:0;z-index:30;margin:16px -18px 0;
+  padding:12px 18px calc(12px + var(--safe-b));
+  background:color-mix(in srgb,var(--bg) 86%,transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:9px;
+}
+.action-bar .left{display:flex;gap:8px;align-items:center}
+.action-bar .right{display:flex;gap:8px;align-items:center;margin-left:auto}
+.btn.icon-only{padding:0;width:48px;min-width:48px;height:48px;font-size:24px;font-weight:400;line-height:1}
+.action-bar .left,.action-bar .right{gap:10px}
+.kbd-hint{color:var(--text-3);font-size:11.5px;margin-top:9px;text-align:center}
+.kbd-hint kbd{
+  font-family:inherit;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;
+  padding:1px 6px;font-size:11px;margin:0 1px;color:var(--text-2)
+}
 
-  /* 结果页统计卡 */
-  .stats-card {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 18px;
-    box-shadow: var(--shadow);
-  }
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-    margin-top: 14px;
-  }
-  .stat-item {
-    background: var(--c-surface-2);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    text-align: center;
-  }
-  .stat-item .stat-label { font-size: 12px; color: var(--c-text-3); margin-bottom: 4px; }
-  .stat-item .stat-num { font-size: 22px; font-weight: 700; color: var(--c-text); }
-  .stat-item .stat-pct { font-size: 12px; color: var(--c-text-2); margin-top: 2px; }
-  .stat-item.good .stat-num { color: var(--c-success); }
-  .stat-item.bad .stat-num { color: var(--c-danger); }
+/* ---------- Navigator drawer ---------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(20,18,14,.4);z-index:60;opacity:0;
+  transition:opacity .2s;backdrop-filter:blur(1px);pointer-events:none;
+}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;z-index:61;background:var(--surface);box-shadow:var(--shadow-lg);
+  display:flex;flex-direction:column;
+  top:0;right:0;height:100dvh;width:min(380px,86vw);
+  transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  border-left:1px solid var(--border);pointer-events:none;
+}
+.drawer.show{transform:translateX(0)}
+.drawer.show{pointer-events:auto}
+.drawer-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;border-bottom:1px solid var(--border);
+}
+.drawer-head h3{margin:0;font-size:16px;font-weight:650}
+.drawer-body{padding:18px 20px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
+.nav-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:12px;color:var(--text-2)}
+.nav-legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:13px;height:13px;border-radius:5px;display:inline-block;border:1.5px solid var(--border-strong)}
+.dot.answered{background:var(--primary-soft);border-color:var(--primary)}
+.dot.correct{background:var(--success);border-color:var(--success)}
+.dot.wrong{background:var(--danger);border-color:var(--danger)}
+.nav-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-content:start}
+.nav-cell{
+  height:48px;align-self:start;min-width:0;border-radius:11px;border:1.5px solid var(--border);background:var(--surface);
+  color:var(--text-2);font-weight:650;font-size:15px;cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;transition:transform .08s,border-color .12s;
+}
+.nav-cell:hover{border-color:var(--border-strong)}
+.nav-cell:active{transform:scale(.93)}
+.nav-cell.answered{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
+.nav-cell.correct{background:var(--success);border-color:var(--success);color:#fff}
+.nav-cell.wrong{background:var(--danger);border-color:var(--danger);color:#fff}
+.nav-cell.current{box-shadow:0 0 0 3px var(--primary-ring);border-color:var(--primary)}
+.nav-cell .flag-dot{position:absolute;top:3px;right:4px;color:var(--warning);font-size:11px;line-height:1}
+.nav-cell.correct .flag-dot,.nav-cell.wrong .flag-dot{color:#fff}
+.drawer-foot{padding:14px 20px calc(16px + var(--safe-b));border-top:1px solid var(--border);display:flex;gap:9px}
+.drawer-foot .btn{flex:1}
 
-  .redo-banner {
-    background: linear-gradient(135deg, var(--c-warning), #f5c060);
-    color: #1a1d29;
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    margin-bottom: 14px;
-    font-size: 14px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+/* ---------- Result ---------- */
+.result-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.result-actions .spacer{flex:1}
+.score-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:26px 22px;margin-bottom:16px;box-shadow:var(--shadow-sm);
+  display:flex;align-items:center;gap:24px;
+}
+.score-dial{flex-shrink:0;width:108px;height:108px;position:relative;display:grid;place-items:center}
+.score-dial svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.score-dial .pct{font-size:30px;font-weight:780;line-height:1}
+.score-dial .pl{font-size:11px;color:var(--text-3);margin-top:2px}
+.score-info .big{font-size:20px;font-weight:700;margin-bottom:4px}
+.score-info .sub{color:var(--text-2);font-size:14px;line-height:1.5}
+.score-info .verdict{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;padding:3px 12px;border-radius:999px}
 
-  /* 错题高亮链接 */
-  .btn-warn {
-    background: var(--c-warning);
-    color: #1a1d29;
-  }
-  .btn-warn:hover { background: #e0a536; }
+.stats-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.stats-card .stitle{font-weight:650;font-size:14.5px;margin-bottom:4px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:11px;margin-top:14px}
+.stat-item{background:var(--surface-2);border-radius:var(--radius-sm);padding:13px 12px;text-align:center}
+.stat-item .stat-label{font-size:12px;color:var(--text-3);margin-bottom:5px}
+.stat-item .stat-num{font-size:21px;font-weight:750;color:var(--text)}
+.stat-item .stat-pct{font-size:12px;color:var(--text-2);margin-top:3px;font-weight:600}
+.stat-item.good .stat-num,.stat-item.good .stat-pct{color:var(--success)}
+.stat-item.bad .stat-num,.stat-item.bad .stat-pct{color:var(--danger)}
+
+.result-list{display:flex;flex-direction:column;gap:11px}
+.result-q{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px 19px;box-shadow:var(--shadow-sm);border-left-width:4px}
+.result-q.correct{border-left-color:var(--success)}
+.result-q.wrong{border-left-color:var(--danger)}
+.result-q .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;gap:10px}
+.result-q .qno{font-weight:650;font-size:14px}
+.result-q .qno .ty{color:var(--text-3);font-size:12.5px;font-weight:500;margin-left:6px}
+.badge{font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;white-space:nowrap}
+.badge.correct{background:var(--success-soft);color:var(--success)}
+.badge.wrong{background:var(--danger-soft);color:var(--danger)}
+.result-q .qtext{font-weight:550;margin-bottom:10px;white-space:pre-wrap;line-height:1.55;word-break:break-word}
+.result-q .line{font-size:13.5px;color:var(--text-2);margin:5px 0;line-height:1.55}
+.result-q .line b{color:var(--text)}
+.result-q .explain{margin-top:10px;padding:11px 13px;background:var(--surface-2);border-radius:var(--radius-xs);font-size:13.5px;color:var(--text-2);line-height:1.6}
+
+/* ---------- Misc ---------- */
+.empty{text-align:center;padding:60px 20px;color:var(--text-3)}
+.empty .ico{font-size:42px;margin-bottom:14px;opacity:.8}
+.empty .btn{margin-top:18px}
+.section-label{font-size:13px;font-weight:650;color:var(--text-2);margin:6px 0 12px;letter-spacing:.3px}
+.toast{
+  position:fixed;left:50%;bottom:calc(28px + var(--safe-b));transform:translateX(-50%) translateY(8px);
+  background:var(--text);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:500;
+  opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:90;box-shadow:var(--shadow-lg);max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.spinner{width:26px;height:26px;border:3px solid var(--surface-2);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* history list inside drawer */
+.hist-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;cursor:pointer;transition:background .12s,border-color .12s}
+.hist-item:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.hist-item .when{font-size:13px;color:var(--text-2)}
+.hist-item .sc{font-weight:700;color:var(--primary)}
+.hist-item .sc small{color:var(--text-3);font-weight:500;margin-left:5px}
+
+/* ---------- Responsive ---------- */
+@media (min-width:880px){
+  :root{--maxw:820px}
+}
+@media (min-width:600px){
+  .exam-grid{grid-template-columns:repeat(2,1fr)}
+  .exam-card.solo{grid-column:1/-1}
+}
+@media (max-width:599px){
+  .container{padding:18px 14px calc(34px + var(--safe-b))}
+  .action-bar{margin:14px -14px 0;padding:11px 14px calc(11px + var(--safe-b))}
+  .question-card{padding:20px 17px}
+  .question-text{font-size:16.5px}
+  .score-card{flex-direction:column;text-align:center;gap:16px;padding:24px 18px}
+  .btn .label-full{display:none}
+}
+/* landscape phones: trim vertical space */
+@media (max-height:500px) and (orientation:landscape){
+  .container{padding-top:12px}
+  .hero{margin-bottom:14px}
+  .question-card{padding:16px 18px}
+  .question-text{margin-bottom:12px}
+  .action-bar{padding-top:8px;padding-bottom:calc(8px + var(--safe-b))}
+  .kbd-hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
 </style>
 </head>
 <body>
-<div class="container">
-  <header class="app-header">
-    <div class="brand">
-      <div class="brand-icon">📝</div>
-      <span>考前刷题</span>
+<header class="app-header" id="app-header">
+  <div class="app-header-in">
+    <div class="brand" id="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2l1.8 1.8 3-3.2"></path><path d="M3.5 15.2l1.8 1.8 3-3.2"></path><line x1="12.5" y1="6.5" x2="20.5" y2="6.5"></line><line x1="12.5" y1="15.5" x2="20.5" y2="15.5"></line></svg></div>
+      <span class="brand-name">考前刷题</span>
     </div>
-    <div class="header-meta" id="header-meta"></div>
-  </header>
-  <div id="view"></div>
-</div>
+    <div class="header-right">
+      <span class="header-meta" id="header-meta"></span>
+      <button class="icon-btn" id="theme-btn" title="切换深色 / 浅色" aria-label="切换主题">☀</button>
+    </div>
+  </div>
+</header>
+<main class="container"><div id="view"></div></main>
 <div class="toast" id="toast"></div>
 
-<script>
-/* ====================================================================
-   App: 考前刷题 (Exam Practice) - 单文件 SPA
-   路由:  #/                        -> 主页 (套题列表)
-         #/exam/<id>                -> 答题页
-         #/result/<id>/<sessionId>  -> 结果页
-   ==================================================================== */
-
-const APP = {
-  view: null,
-  state: {},
-};
-
-// ---------- 工具 ----------
-const $ = (sel, root=document) => root.querySelector(sel);
-const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-
-function toast(msg, ms=2200) {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => t.classList.remove('show'), ms);
+<!-- ============ Shared quiz engine (also embedded into offline export) ============ -->
+<script type="text/plain" id="engine-js">
+/* global helpers */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function typeName(t){return {single:'单选',multiple:'多选',blank:'填空'}[t]||t;}
+function renderBlankHTML(t){var ps=String(t).split('___');var h='';ps.forEach(function(s,i){h+=esc(s);if(i<ps.length-1)h+='<b style="color:var(--primary)">['+(i+1)+']</b>';});return h;}
+function normBlank(s){return String(s==null?'':s).trim().toLowerCase();}
+function arraysEqualAsSet(a,b){if(!a||!b||a.length!==b.length)return false;var sa=a.slice().sort();var sb=b.slice().sort();return sa.every(function(v,i){return v===sb[i];});}
+function gradeQuestion(q,ua){
+  if(ua===undefined||ua===null)return {correct:false,answered:false};
+  if(q.type==='single'||q.type==='multiple'){
+    var ans=Array.isArray(ua)?ua:[];
+    return {correct:arraysEqualAsSet(ans,q.answer),answered:ans.length>0};
+  }
+  if(q.type==='blank'){
+    if(!Array.isArray(ua)||ua.length!==q.blanks.length)return {correct:false,answered:false};
+    var any=ua.some(function(x){return String(x||'').trim()!=='';});
+    var ok=ua.every(function(u,i){return q.blanks[i].map(normBlank).indexOf(normBlank(u))>=0;});
+    return {correct:ok,answered:any};
+  }
+  return {correct:false,answered:false};
 }
+function fmtOpts(q){var L=['A','B','C','D','E','F','G','H','I','J'];return (q.options||[]).map(function(o,i){return {key:L[i],text:typeof o==='string'?o:(o&&o.text||'')};});}
+function isAnswered(q,ua){return gradeQuestion(q,ua).answered;}
 
-function escapeHTML(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
-}
+/* theme */
+var THEME_KEY='exam-practice:theme';
+function getThemePref(){try{return localStorage.getItem(THEME_KEY)||'auto';}catch(e){return 'auto';}}
+function resolveTheme(p){return (p==='light'||p==='dark')?p:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function applyTheme(){document.documentElement.setAttribute('data-theme',resolveTheme(getThemePref()));}
+function toggleTheme(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';var next=cur==='dark'?'light':'dark';try{localStorage.setItem(THEME_KEY,next);}catch(e){}applyTheme();}
+function themeGlyph(){return document.documentElement.getAttribute('data-theme')==='dark'?'☾':'☀';}
 
-// 填空题文本里的占位符渲染：用 ___ 表示空。把题目里的每个 ___ 替换为编号
-function renderBlankQuestionHTML(questionText) {
-  // 按 ___ 切分插入编号标记
-  const parts = String(questionText).split('___');
-  let html = '';
-  parts.forEach((seg, i) => {
-    html += escapeHTML(seg);
-    if (i < parts.length - 1) {
-      html += `<b style="color:var(--c-primary)">[空${i+1}]</b>`;
+/* ---------------- Quiz engine ---------------- */
+var __quizKeyHandler=null;
+function mountQuiz(opts){
+  var root=opts.root, questions=opts.questions, total=questions.length;
+  var persistKey=opts.persistKey||null;
+  var st=Object.assign({answers:{},idx:0,mode:'practice',reviewed:{},revealed:{},flagged:{}},opts.initialState||{});
+  st.navOpen=false;
+  if(st.idx>=total)st.idx=0;
+  var showResume=!!opts.resumed;
+
+  function save(){if(!persistKey)return;try{localStorage.setItem(persistKey,JSON.stringify({answers:st.answers,idx:st.idx,mode:st.mode,reviewed:st.reviewed,revealed:st.revealed,flagged:st.flagged}));}catch(e){}}
+  function clearSaved(){if(persistKey){try{localStorage.removeItem(persistKey);}catch(e){}}}
+
+  function cellState(i){
+    var q=questions[i],ua=st.answers[q.id];
+    if(st.reviewed[q.id])return gradeQuestion(q,ua).correct?'correct':'wrong';
+    if(isAnswered(q,ua))return 'answered';
+    return 'empty';
+  }
+  function doneCount(){var n=0;questions.forEach(function(q){if(st.reviewed[q.id]||st.revealed[q.id]||isAnswered(q,st.answers[q.id]))n++;});return n;}
+
+  function go(i){st.idx=Math.max(0,Math.min(total-1,i));save();render();var sc=root.querySelector('.q-scroll');}
+  function next(){if(st.idx<total-1)go(st.idx+1);}
+  function prev(){if(st.idx>0)go(st.idx-1);}
+
+  function confirmSubmit(){
+    var un=0;questions.forEach(function(q){if(!isAnswered(q,st.answers[q.id]))un++;});
+    if(un>0 && !confirm('还有 '+un+' 题未作答，确定提交答卷？'))return;
+    submit();
+  }
+  function submit(){
+    var correct=0;questions.forEach(function(q){if(gradeQuestion(q,st.answers[q.id]).correct)correct++;});
+    var score=total?Math.round(correct/total*100):0;
+    clearSaved();
+    if(__quizKeyHandler){document.removeEventListener('keydown',__quizKeyHandler);__quizKeyHandler=null;}
+    opts.onSubmit({answers:JSON.parse(JSON.stringify(st.answers)),correct:correct,total:total,score:score,finishedAt:Date.now(),flagged:st.flagged});
+  }
+
+  function answerBody(q,locked,revealOnly){
+    var ua=st.answers[q.id];
+    if(q.type==='single'){
+      var O=fmtOpts(q),ci=q.answer[0],ui=ua?ua[0]:-1;
+      return '<div class="options">'+O.map(function(o,i){
+        var cls='option';if(locked||revealOnly)cls+=' locked';
+        if(ua&&ui===i)cls+=' selected';
+        if(locked&&ui===i&&ui!==ci)cls+=' wrong-opt';
+        if((locked||revealOnly)&&i===ci)cls+=' correct-opt';
+        return '<label class="'+cls+'" data-idx="'+i+'"><span class="ctrl radio">✓</span><span class="option-body"><span class="option-key">'+o.key+'</span><span class="option-text">'+esc(o.text)+'</span></span></label>';
+      }).join('')+'</div>';
     }
-  });
-  return html;
-}
-
-// 答对判定 ----------
-function arraysEqualAsSet(a, b) {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort();
-  const sb = [...b].sort();
-  return sa.every((v, i) => v === sb[i]);
-}
-function blanksAnsweredCorrect(userBlanks, acceptedBlanks) {
-  if (!userBlanks || userBlanks.length !== acceptedBlanks.length) return false;
-  // 大小写不敏感、首尾空格忽略；用户答案在「任一接受答案」中即视为对
-  const norm = s => String(s || '').trim().toLowerCase();
-  return userBlanks.every((u, i) => {
-    const accepted = acceptedBlanks[i].map(norm);
-    return accepted.includes(norm(u));
-  });
-}
-
-function gradeQuestion(q, userAnswer) {
-  // 返回 { correct: bool, status: 'correct'|'wrong'|'blank' }
-  if (userAnswer === undefined || userAnswer === null) return { correct: false, status: 'blank' };
-  if (q.type === 'single') {
-    return { correct: arraysEqualAsSet(userAnswer, q.answer), status: 'ok' };
+    if(q.type==='multiple'){
+      var O2=fmtOpts(q),S=new Set(ua||[]),CS=new Set(q.answer);
+      return '<div class="options">'+O2.map(function(o,i){
+        var cls='option';if(locked||revealOnly)cls+=' locked';
+        if(S.has(i))cls+=' selected';
+        if(locked){if(S.has(i)&&!CS.has(i))cls+=' wrong-opt';if(CS.has(i))cls+=' correct-opt';}
+        else if(revealOnly){if(CS.has(i))cls+=' correct-opt';}
+        return '<label class="'+cls+'" data-idx="'+i+'"><span class="ctrl check">✓</span><span class="option-body"><span class="option-key">'+o.key+'</span><span class="option-text">'+esc(o.text)+'</span></span></label>';
+      }).join('')+'</div>';
+    }
+    /* blank */
+    var ub=ua||(q.blanks||[]).map(function(){return '';});
+    var rows=q.blanks.map(function(_,i){
+      var cls='blank-input';if(locked||revealOnly)cls+=' locked';
+      if(locked){var ok=q.blanks[i].map(normBlank).indexOf(normBlank(ub[i]||''))>=0;cls+=ok?' correct-blank':' wrong-blank';}
+      return '<div class="blank-row"><div class="blank-index">'+(i+1)+'</div><input class="'+cls+'" data-bi="'+i+'" value="'+esc(ub[i]||'')+'" placeholder="空 '+(i+1)+'" '+((locked||revealOnly)?'readonly':'')+' enterkeyhint="next" /></div>';
+    }).join('');
+    return '<div class="blank-area">'+rows+'</div><div class="blank-preview">'+renderBlankHTML(q.question)+'</div>';
   }
-  if (q.type === 'multiple') {
-    return { correct: arraysEqualAsSet(userAnswer, q.answer), status: 'ok' };
+
+  function feedbackHTML(q){
+    var ua=st.answers[q.id];
+    var reviewed=st.reviewed[q.id],revealed=st.revealed[q.id];
+    if(!reviewed&&!revealed)return '';
+    var O=q.type!=='blank'?fmtOpts(q):null,uH='',cH='';
+    if(q.type==='single'){uH=(ua&&ua.length)?(O[ua[0]]?(O[ua[0]].key+'. '+esc(O[ua[0]].text)):'?'):'（未作答）';cH=O[q.answer[0]]?(O[q.answer[0]].key+'. '+esc(O[q.answer[0]].text)):'';}
+    else if(q.type==='multiple'){uH=(ua&&ua.length)?ua.map(function(i){return O[i]?O[i].key:'?';}).join(' ')||'（未作答）':'（未作答）';cH=q.answer.map(function(i){return O[i]?(O[i].key+'. '+esc(O[i].text)):'';}).join(' / ');}
+    else{uH=(ua&&ua.length)?ua.map(function(v,i){return '空'+(i+1)+': <b>'+esc(v||'（空）')+'</b>';}).join('<br/>'):'（未作答）';cH=q.blanks.map(function(a,i){return '空'+(i+1)+': <b>'+a.map(esc).join(' / ')+'</b>';}).join('<br/>');}
+    if(reviewed){
+      var ok=gradeQuestion(q,ua).correct;
+      return '<div class="feedback '+(ok?'correct':'wrong')+'"><div class="fb-title">'+(ok?'✓ 答对了':'✗ 答错了')+'</div><div class="fb-line">你的答案：'+uH+'</div>'+(!ok?'<div class="fb-line">正确答案：'+cH+'</div>':'')+(q.explanation?'<div class="fb-explain">解析 · '+esc(q.explanation)+'</div>':'')+(!ok&&st.mode==='practice'?'<button class="btn ghost sm fb-retry" data-retry>重新作答 ↻</button>':'')+'</div>';
+    }
+    return '<div class="feedback revealed"><div class="fb-title">参考答案</div><div class="fb-line">'+cH+'</div>'+(q.explanation?'<div class="fb-explain">解析 · '+esc(q.explanation)+'</div>':'')+'</div>';
   }
-  if (q.type === 'blank') {
-    return { correct: blanksAnsweredCorrect(userAnswer, q.blanks), status: 'ok' };
+
+  function navDrawer(){
+    var cells=questions.map(function(q,i){
+      var s=cellState(i);
+      return '<button class="nav-cell '+s+(i===st.idx?' current':'')+'" data-nav="'+i+'">'+(st.flagged[q.id]?'<span class="flag-dot">⚑</span>':'')+(i+1)+'</button>';
+    }).join('');
+    return '<div class="scrim'+(st.navOpen?' show':'')+'" data-close-nav></div>'+
+      '<aside class="drawer'+(st.navOpen?' show':'')+'">'+
+      '<div class="drawer-head"><h3>题目导航</h3><button class="icon-btn" data-close-nav>✕</button></div>'+
+      '<div class="drawer-body">'+
+        '<div class="nav-legend"><span><i class="dot"></i>未答</span><span><i class="dot answered"></i>已选</span><span><i class="dot correct"></i>对</span><span><i class="dot wrong"></i>错</span><span><i style="color:var(--warning)">⚑</i>标记</span></div>'+
+        '<div class="nav-grid">'+cells+'</div>'+
+      '</div>'+
+      '<div class="drawer-foot"><button class="btn ghost" data-jump-flag>跳到标记</button><button class="btn success" data-do-submit>提交答卷</button></div>'+
+      '</aside>';
   }
-  return { correct: false, status: 'wrong' };
-}
 
-function normalizeBlankAnswer(s) {
-  return String(s || '').trim().toLowerCase();
-}
+  function render(){
+    var q=questions[st.idx];
+    var reviewed=st.reviewed[q.id],revealed=st.revealed[q.id];
+    var locked=reviewed; var revealOnly=revealed&&!reviewed;
+    var answered=isAnswered(q,st.answers[q.id]);
+    var isLast=st.idx===total-1;
+    var done=doneCount();
 
-function formatOptions(q) {
-  // 选择题渲染：A./B./C./...
-  const opts = q.options || [];
-  const letters = ['A','B','C','D','E','F','G','H','I','J'];
-  return opts.map((o, i) => ({
-    key: letters[i],
-    text: typeof o === 'string' ? o : (o.text ?? ''),
-  }));
-}
+    // primary button
+    var primLabel,primClass='btn';
+    if(st.mode==='practice'&&!reviewed){primLabel='确认';primClass='btn';}
+    else if(!isLast){primLabel='下一题 →';}
+    else {primLabel='提交答卷';primClass='btn success';}
 
-// ---------- Storage ----------
-const STORE_KEY = (examId) => `exam-practice:sessions:${examId}`;
-const META_KEY = (examId) => `exam-practice:meta:${examId}`;
+    var html=''+
+      (opts.redoInfo?'<div class="redo-banner">错题重做 · 本组 '+total+' 题（原卷共 '+opts.redoInfo.original+' 题）</div>':'')+
+      (showResume?'<div class="resume-banner"><span>已自动恢复上次进度</span><button class="btn subtle sm" data-restart>从头开始</button></div>':'')+
+      '<div class="quiz-top">'+
+        '<div class="quiz-top-row">'+
+          '<div class="back-link" data-exit>‹ 返回</div>'+
+          '<div class="seg" role="tablist"><button data-mode="practice" class="'+(st.mode==='practice'?'active':'')+'">练习</button><button data-mode="exam" class="'+(st.mode==='exam'?'active':'')+'">考试</button></div>'+
+          '<button class="icon-btn" data-open-nav title="题目导航">▦</button>'+
+        '</div>'+
+        '<div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:'+(total?(done/total*100):0).toFixed(1)+'%"></div></div>'+
+        '<div class="progress-meta"><span class="now">第 '+(st.idx+1)+' / '+total+' 题</span><span>已完成 '+done+' / '+total+'</span></div></div>'+
+      '</div>'+
+      '<div class="q-scroll fade-in" key="'+st.idx+'">'+
+        '<div class="question-card">'+
+          '<span class="q-flag'+(st.flagged[q.id]?' on':'')+'" data-flag title="标记本题">⚑</span>'+
+          '<div class="q-type '+q.type+'">'+typeName(q.type)+'</div>'+
+          '<div class="question-text">'+(q.type==='blank'?renderBlankHTML(q.question):esc(q.question))+'</div>'+
+          answerBody(q,locked,revealOnly)+
+          feedbackHTML(q)+
+        '</div>'+
+      '</div>'+
+      '<div class="action-bar">'+
+        '<div class="left"><button class="btn ghost icon-only" data-prev '+(st.idx===0?'disabled':'')+' title="上一题">‹</button>'+
+          (st.mode==='practice'?'<button class="btn ghost sm" data-reveal '+((reviewed||revealed)?'disabled':'')+'>显示答案</button>':'')+
+        '</div>'+
+        '<div class="right">'+
+          (!isLast?'<button class="btn ghost icon-only" data-next title="下一题">›</button>':'')+
+          '<button class="'+primClass+'" data-primary>'+primLabel+'</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="kbd-hint"><kbd>1</kbd>–<kbd>9</kbd> 选项 · <kbd>←</kbd><kbd>→</kbd> 翻题 · <kbd>Enter</kbd> '+(st.mode==='practice'&&!reviewed?'确认':'下一题')+' · <kbd>F</kbd> 标记</div>'+
+      navDrawer();
 
-function loadSessions(examId) {
-  try {
-    return JSON.parse(localStorage.getItem(STORE_KEY(examId)) || '{}');
-  } catch { return {}; }
-}
-function saveSession(examId, sessionId, data) {
-  const all = loadSessions(examId);
-  all[sessionId] = data;
-  localStorage.setItem(STORE_KEY(examId), JSON.stringify(all));
-}
-function getSession(examId, sessionId) {
-  return loadSessions(examId)[sessionId];
-}
-function listSessions(examId) {
-  return Object.values(loadSessions(examId)).sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
-}
+    root.innerHTML=html;
+    bind(q,locked,revealOnly);
+  }
 
-// ---------- 数据加载 ----------
-async function loadManifest() {
-  const r = await fetch('./data/manifest.json');
-  if (!r.ok) throw new Error('加载题库列表失败');
-  return r.json();
-}
-async function loadExam(examMeta) {
-  const r = await fetch(`./data/${examMeta.file}`);
-  if (!r.ok) throw new Error('加载套题失败: ' + examMeta.file);
-  return r.json();
-}
+  function bind(q,locked,revealOnly){
+    var qa=function(s){return root.querySelector(s);};
+    var qaa=function(s){return Array.prototype.slice.call(root.querySelectorAll(s));};
+    qa('[data-exit]')&&(qa('[data-exit]').onclick=function(){if(__quizKeyHandler){document.removeEventListener('keydown',__quizKeyHandler);__quizKeyHandler=null;}opts.onExit&&opts.onExit();});
+    qa('[data-prev]')&&(qa('[data-prev]').onclick=prev);
+    qa('[data-next]')&&(qa('[data-next]').onclick=next);
+    var rb=qa('[data-restart]');if(rb)rb.onclick=function(){st.answers={};st.idx=0;st.reviewed={};st.revealed={};st.flagged={};showResume=false;clearSaved();render();};
+    qaa('[data-mode]').forEach(function(b){b.onclick=function(){if(b.dataset.mode===st.mode)return;st.mode=b.dataset.mode;st.reviewed={};st.revealed={};save();render();};});
+    var fl=qa('[data-flag]');if(fl)fl.onclick=function(){if(st.flagged[q.id])delete st.flagged[q.id];else st.flagged[q.id]=true;save();render();};
+    var rv=qa('[data-reveal]');if(rv)rv.onclick=function(){st.revealed[q.id]=true;save();render();};
+    var pr=qa('[data-primary]');if(pr)pr.onclick=primaryAction;
+    // nav drawer
+    qa('[data-open-nav]')&&(qa('[data-open-nav]').onclick=function(){st.navOpen=true;render();});
+    qaa('[data-close-nav]').forEach(function(b){b.onclick=function(){st.navOpen=false;render();};});
+    qaa('[data-nav]').forEach(function(b){b.onclick=function(){st.navOpen=false;go(+b.dataset.nav);};});
+    var sb=qa('[data-do-submit]');if(sb)sb.onclick=function(){st.navOpen=false;confirmSubmit();};
+    var jf=qa('[data-jump-flag]');if(jf)jf.onclick=function(){var t=questions.findIndex(function(qq){return st.flagged[qq.id];});if(t<0){window.__toast&&window.__toast('没有标记的题');return;}st.navOpen=false;go(t);};
 
-// ---------- 路由 ----------
-function getRoute() {
-  const hash = location.hash || '#/';
-  return hash.replace(/^#/, '') || '/';
-}
-function navigate(path) {
-  location.hash = '#' + path;
-}
-window.addEventListener('hashchange', render);
-window.addEventListener('DOMContentLoaded', render);
+    // option / blank inputs
+    if((q.type==='single'||q.type==='multiple')&&!locked&&!revealOnly){
+      qaa('.option').forEach(function(opt){
+        opt.onclick=function(){selectOption(q,+opt.dataset.idx);};
+      });
+    } else if(q.type==='blank'&&!locked&&!revealOnly){
+      qaa('.blank-input').forEach(function(inp){
+        inp.oninput=function(){var bi=+inp.dataset.bi;var cur=st.answers[q.id]||(q.blanks||[]).map(function(){return '';});cur[bi]=inp.value;st.answers[q.id]=cur;save();};
+        inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();var ins=qaa('.blank-input');var k=ins.indexOf(inp);if(k<ins.length-1)ins[k+1].focus();else primaryAction();}};
+      });
+    }
+    // swipe
+    var scroll=qa('.q-scroll');if(scroll)attachSwipe(scroll);
 
-// ---------- 视图 ----------
-async function render() {
-  const route = getRoute();
-  const view = $('#view');
-  view.innerHTML = '<div class="empty"><div class="ico">⏳</div>加载中…</div>';
+    function primaryAction(){
+      if(st.mode==='practice'&&!st.reviewed[q.id]){
+        if(!isAnswered(q,st.answers[q.id])){window.__toast&&window.__toast('请先作答');return;}
+        st.reviewed[q.id]=true;save();render();return;
+      }
+      if(st.idx<total-1)next();else confirmSubmit();
+    }
+    window.__primaryAction=primaryAction;
+  }
 
-  try {
-    if (route === '/' || route === '') {
-      await renderHome(view);
-    } else if (route.startsWith('/exam/')) {
-      const rest = route.slice('/exam/'.length);
-      const [pathPart, queryPart] = rest.split('?');
-      const id = decodeURIComponent(pathPart);
-      const params = new URLSearchParams(queryPart || '');
-      const redoSid = params.get('redo') || null;
-      await renderExam(view, id, { redoSid });
-    } else if (route.startsWith('/result/')) {
-      const rest = route.slice('/result/'.length);
-      const [pathPart, queryPart] = rest.split('?');
-      const parts = pathPart.split('/');
-      const id = decodeURIComponent(parts[0]);
-      const sid = decodeURIComponent(parts[1] || '');
-      const params = new URLSearchParams(queryPart || '');
-      const redoSid = params.get('redo') || null;
-      await renderResult(view, id, sid, { redoSid });
+  function selectOption(q,idx){
+    if(q.type==='single'){
+      st.answers[q.id]=[idx];
     } else {
-      view.innerHTML = '<div class="empty"><div class="ico">🧭</div>页面不存在，<a href="#/">回首页</a></div>';
+      var cur=new Set(st.answers[q.id]||[]);
+      if(cur.has(idx))cur.delete(idx);else cur.add(idx);
+      st.answers[q.id]=Array.from(cur).sort(function(a,b){return a-b;});
     }
-    updateHeaderMeta();
-  } catch (e) {
-    console.error(e);
-    view.innerHTML = `<div class="empty"><div class="ico">⚠️</div>${escapeHTML(e.message)}<br/><br/><a href="#/">回首页</a></div>`;
-  }
-}
-
-function updateHeaderMeta() {
-  const m = $('#header-meta');
-  const sessionsCount = listSessionsAll().length;
-  if (sessionsCount > 0) {
-    m.innerHTML = `历史记录: ${sessionsCount} 次`;
-  } else {
-    m.innerHTML = '';
-  }
-}
-
-function listSessionsAll() {
-  // 统计所有 examId 的 session 总数（轻量）
-  const out = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('exam-practice:sessions:')) {
-      try {
-        const obj = JSON.parse(localStorage.getItem(k));
-        Object.values(obj).forEach(s => out.push(s));
-      } catch {}
-    }
-  }
-  return out;
-}
-
-// ===== Home =====
-async function renderHome(view) {
-  const manifest = await loadManifest();
-  // 并行加载每套题以获取真实题目数
-  const exams = await Promise.all(manifest.exams.map(async (m) => {
-    try {
-      const full = await loadExam(m);
-      return { ...m, questionCount: (full.questions || []).length, _full: full };
-    } catch (e) {
-      return { ...m, questionCount: 0, error: e.message };
-    }
-  }));
-
-  view.innerHTML = `
-    <div class="hero">
-      <h1>考前刷题 · 练习中心</h1>
-      <p>选择一套试卷开始练习，或下载单套离线版本。</p>
-    </div>
-    <div class="exam-list" id="exam-list"></div>
-  `;
-  const list = $('#exam-list', view);
-  exams.forEach(ex => {
-    const sessions = listSessions(ex.id);
-    const bestScore = sessions.length ? Math.max(...sessions.map(s => s.score || 0)) : null;
-    const card = document.createElement('div');
-    card.className = 'exam-card';
-    card.innerHTML = `
-      <div class="exam-card-title">${escapeHTML(ex.title)}</div>
-      <div class="exam-card-meta">
-        ${ex.subject ? `<span class="chip">${escapeHTML(ex.subject)}</span>` : ''}
-        ${ex.examDate ? `<span class="chip">📅 ${escapeHTML(ex.examDate)}</span>` : ''}
-        <span class="chip">📋 ${ex.questionCount} 题</span>
-        ${ex.duration ? `<span class="chip">⏱️ ${escapeHTML(String(ex.duration))} 分钟</span>` : ''}
-        ${bestScore !== null ? `<span class="chip">🏆 最高 ${bestScore}%</span>` : ''}
-        ${sessions.length ? `<span class="chip">📜 ${sessions.length} 次记录</span>` : ''}
-      </div>
-      ${ex.description ? `<div class="exam-card-desc">${escapeHTML(ex.description)}</div>` : ''}
-      <div class="exam-card-actions">
-        <button data-act="start">开始练习</button>
-        ${sessions.length ? `<button class="ghost" data-act="history">历史成绩 (${sessions.length})</button>` : ''}
-        <button class="ghost" data-act="download">下载离线版</button>
-      </div>
-    `;
-    card.querySelector('[data-act="start"]').addEventListener('click', () => navigate('/exam/' + encodeURIComponent(ex.id)));
-    const histBtn = card.querySelector('[data-act="history"]');
-    if (histBtn) histBtn.addEventListener('click', () => showHistoryModal(ex));
-    card.querySelector('[data-act="download"]').addEventListener('click', () => downloadOffline(ex));
-    list.appendChild(card);
-  });
-}
-
-function showHistoryModal(examMeta) {
-  const sessions = listSessions(examMeta.id);
-  const lines = sessions.map(s => {
-    const t = new Date(s.finishedAt).toLocaleString('zh-CN', { hour12: false });
-    return `<a href="#/result/${encodeURIComponent(examMeta.id)}/${encodeURIComponent(s.sessionId)}" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--c-border);text-decoration:none;color:var(--c-text)">
-      <span>${escapeHTML(t)}</span><span style="color:var(--c-primary);font-weight:600">${s.score}% · ${s.correct}/${s.total}</span>
-    </a>`;
-  }).join('');
-  const w = window.open('', '_blank', 'width=420,height=480');
-  w.document.write(`<html><head><meta charset="utf-8"><title>${escapeHTML(examMeta.title)} · 历史</title>
-    <style>body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:18px;color:#1a1d29;background:#f7f8fb}
-    h2{margin:0 0 14px;font-size:18px}a:hover{background:#f0f2f7}</style></head>
-    <body><h2>${escapeHTML(examMeta.title)}</h2><div>${lines || '<p style="color:#8b91a3">暂无历史</p>'}</div></body></html>`);
-}
-
-// ===== Exam (答题) =====
-async function renderExam(view, examId, opts = {}) {
-  const manifest = await loadManifest();
-  const meta = manifest.exams.find(e => e.id === examId);
-  if (!meta) throw new Error('找不到套题: ' + examId);
-  const exam = await loadExam(meta);
-
-  // 错题重做模式：只加载上次的错题
-  let questions = exam.questions;
-  let redoSourceSession = null;
-  if (opts.redoSid) {
-    const prevSession = getSession(exam.id, opts.redoSid);
-    if (!prevSession) throw new Error('找不到原始答卷记录');
-    redoSourceSession = prevSession;
-    questions = exam.questions.filter(q => {
-      const r = gradeQuestion(q, prevSession.answers[q.id]);
-      return !r.correct;
+    save();
+    // light update without full re-render to keep it snappy
+    var root2=root;
+    Array.prototype.slice.call(root2.querySelectorAll('.option')).forEach(function(o){
+      var i=+o.dataset.idx;var sel=(st.answers[q.id]||[]).indexOf(i)>=0;o.classList.toggle('selected',sel);
     });
-    if (questions.length === 0) {
-      // 没有错题，跳回结果页
-      toast('这次没有错题 🎉');
-      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(opts.redoSid));
+  }
+
+  function attachSwipe(el){
+    var x0=null,y0=null,t0=0;
+    el.addEventListener('touchstart',function(e){var t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();},{passive:true});
+    el.addEventListener('touchend',function(e){
+      if(x0==null)return;var t=e.changedTouches[0];var dx=t.clientX-x0,dy=t.clientY-y0;
+      if(Date.now()-t0<600&&Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.6){if(dx<0)next();else prev();}
+      x0=null;
+    },{passive:true});
+  }
+
+  // keyboard
+  if(__quizKeyHandler){document.removeEventListener('keydown',__quizKeyHandler);}
+  __quizKeyHandler=function(e){
+    if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    var q=questions[st.idx];
+    if(st.navOpen&&e.key==='Escape'){st.navOpen=false;render();return;}
+    if(e.key==='ArrowRight'){e.preventDefault();next();return;}
+    if(e.key==='ArrowLeft'){e.preventDefault();prev();return;}
+    if(e.key==='Enter'){e.preventDefault();window.__primaryAction&&window.__primaryAction();return;}
+    if(e.key==='f'||e.key==='F'){if(st.flagged[q.id])delete st.flagged[q.id];else st.flagged[q.id]=true;save();render();return;}
+    if((e.key==='r'||e.key==='R')&&st.mode==='practice'&&!st.reviewed[q.id]&&!st.revealed[q.id]){st.revealed[q.id]=true;save();render();return;}
+    if(/^[1-9]$/.test(e.key)){
+      var idx=+e.key-1;
+      if((q.type==='single'||q.type==='multiple')&&!st.reviewed[q.id]&&!st.revealed[q.id]&&idx<(q.options||[]).length){selectOption(q,idx);}
       return;
     }
-  }
+  };
+  document.addEventListener('keydown',__quizKeyHandler);
 
-  // 新建一个 session
-  const sessionId = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-  const answers = {}; // qid -> userAnswer
-  const reviewed = new Set(); // qid: 本题已答完/已判过（练习模式下防重复判）
-  const revealed = new Set(); // qid: 已揭题（点击过「显示答案」）
-  let mode = 'practice'; // 'practice' | 'exam'
-  let currentIdx = 0;
-
-  function questionView(idx) {
-    const q = questions[idx];
-    const total = questions.length;
-    const userAns = answers[q.id];
-    const isReviewed = reviewed.has(q.id);
-    const isRevealed = revealed.has(q.id);
-    const result = isReviewed ? gradeQuestion(q, userAns) : (isRevealed ? { correct: null } : null);
-
-    const typeMap = { single: '单选', multiple: '多选', blank: '填空' };
-    const typeClass = q.type;
-
-    // 选项渲染：根据 reviewed/revealed 状态加锁、加正确错误样式
-    let bodyHTML = '';
-    if (q.type === 'single') {
-      const opts = formatOptions(q);
-      const correctIdx = q.answer[0];
-      const userIdx = userAns ? userAns[0] : -1;
-      bodyHTML = `<div class="options">${opts.map((o, i) => {
-        let cls = 'option';
-        if (isReviewed || isRevealed) cls += ' locked';
-        if (userAns && userIdx === i) cls += ' selected';
-        if (isReviewed && userIdx === i && userIdx !== correctIdx) cls += ' wrong-opt';
-        if (isReviewed || isRevealed) {
-          if (i === correctIdx) cls += ' correct-opt';
-        }
-        return `<label class="${cls}" data-idx="${i}">
-          <input type="radio" name="q_${q.id}" ${userAns && userIdx===i ? 'checked':''} ${isReviewed||isRevealed?'disabled':''}/>
-          <span class="option-label"><span class="option-key">${o.key}.</span>${escapeHTML(o.text)}</span>
-        </label>`;
-      }).join('')}</div>`;
-    } else if (q.type === 'multiple') {
-      const opts = formatOptions(q);
-      const userSet = new Set(userAns || []);
-      const correctSet = new Set(q.answer);
-      bodyHTML = `<div class="options">${opts.map((o, i) => {
-        let cls = 'option';
-        if (isReviewed || isRevealed) cls += ' locked';
-        if (userSet.has(i)) cls += ' selected';
-        if (isReviewed) {
-          if (userSet.has(i) && !correctSet.has(i)) cls += ' wrong-opt';
-          if (correctSet.has(i)) cls += ' correct-opt';
-        } else if (isRevealed) {
-          if (correctSet.has(i)) cls += ' correct-opt';
-        }
-        return `<label class="${cls}" data-idx="${i}">
-          <input type="checkbox" ${userSet.has(i)?'checked':''} ${isReviewed||isRevealed?'disabled':''}/>
-          <span class="option-label"><span class="option-key">${o.key}.</span>${escapeHTML(o.text)}</span>
-        </label>`;
-      }).join('')}</div>`;
-    } else if (q.type === 'blank') {
-      const blanks = q.blanks || [];
-      const userBlanks = userAns || blanks.map(() => '');
-      bodyHTML = `<div class="blank-area">
-        ${blanks.map((_, i) => {
-          let cls = 'blank-input';
-          if (isReviewed || isRevealed) cls += ' locked';
-          if (isReviewed) {
-            const userV = normalizeBlankAnswer(userBlanks[i] || '');
-            const ok = q.blanks[i].map(normalizeBlankAnswer).includes(userV);
-            cls += ok ? ' correct-blank' : ' wrong-blank';
-          }
-          return `<div class="blank-row">
-            <div class="blank-index">${i+1}</div>
-            <input class="${cls}" data-bi="${i}" value="${escapeHTML(userBlanks[i] || '')}" placeholder="空 ${i+1} 答案" ${isReviewed||isRevealed?'readonly':''} />
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="blank-preview">${renderBlankQuestionHTML(q.question)}</div>`;
-    }
-
-    // 反馈区
-    let feedbackHTML = '';
-    if (isReviewed && result) {
-      const correct = result.correct;
-      const optList = q.type !== 'blank' ? formatOptions(q) : null;
-      let userAnsHTML = '', correctAnsHTML = '';
-      if (q.type === 'single') {
-        userAnsHTML = userAns && userAns.length ? `${optList[userAns[0]]?.key || '?'}. ${escapeHTML(optList[userAns[0]]?.text || '')}` : '（未作答）';
-        correctAnsHTML = optList[q.answer[0]] ? `${optList[q.answer[0]].key}. ${escapeHTML(optList[q.answer[0]].text)}` : '';
-      } else if (q.type === 'multiple') {
-        userAnsHTML = (userAns && userAns.length) ? userAns.map(idx => optList[idx]?.key || '?').join('') : '（未作答）';
-        correctAnsHTML = q.answer.map(idx => `${optList[idx]?.key}. ${escapeHTML(optList[idx]?.text || '')}`).join(' / ');
-      } else if (q.type === 'blank') {
-        userAnsHTML = (userAns && userAns.length) ? userAns.map((v, i) => `空${i+1}: <b>${escapeHTML(v || '（空）')}</b>`).join('<br/>') : '（未作答）';
-        correctAnsHTML = q.blanks.map((arr, i) => `空${i+1}: <b>${arr.map(escapeHTML).join(' / ')}</b>`).join('<br/>');
-      }
-      feedbackHTML = `<div class="feedback ${correct?'correct':'wrong'}">
-        <div class="feedback-title">${correct?'✓ 答对了':'✗ 答错了'}</div>
-        <div class="feedback-line">你的答案：${userAnsHTML}</div>
-        ${!correct ? `<div class="feedback-line">正确答案：${correctAnsHTML}</div>` : ''}
-        ${q.explanation ? `<div class="explain">💡 ${escapeHTML(q.explanation)}</div>` : ''}
-      </div>`;
-    } else if (isRevealed) {
-      const optList = q.type !== 'blank' ? formatOptions(q) : null;
-      let correctAnsHTML = '';
-      if (q.type === 'single') {
-        correctAnsHTML = optList[q.answer[0]] ? `${optList[q.answer[0]].key}. ${escapeHTML(optList[q.answer[0]].text)}` : '';
-      } else if (q.type === 'multiple') {
-        correctAnsHTML = q.answer.map(idx => `${optList[idx]?.key}. ${escapeHTML(optList[idx]?.text || '')}`).join(' / ');
-      } else if (q.type === 'blank') {
-        correctAnsHTML = q.blanks.map((arr, i) => `空${i+1}: <b>${arr.map(escapeHTML).join(' / ')}</b>`).join('<br/>');
-      }
-      feedbackHTML = `<div class="feedback revealed">
-        <div class="feedback-title">👀 仅供参考</div>
-        <div class="feedback-line">参考答案：${correctAnsHTML}</div>
-        ${q.explanation ? `<div class="explain">💡 ${escapeHTML(q.explanation)}</div>` : ''}
-      </div>`;
-    }
-
-    // 已完成计数
-    const doneCount = [...new Set([...reviewed, ...revealed])].length;
-
-    view.innerHTML = `
-      ${opts.redoSid ? `<div class="redo-banner">🔁 错题重做模式 · 共 ${total} 道错题（原卷 ${exam.questions.length} 题）</div>` : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div>
-          <a href="#/" style="color:var(--c-text-2);font-size:13px">← 返回列表</a>
-          <span style="margin-left:10px;font-weight:600">${escapeHTML(exam.title)}</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div class="mode-toggle" role="tablist">
-            <button data-mode="practice" class="${mode==='practice'?'active':''}">练习模式</button>
-            <button data-mode="exam" class="${mode==='exam'?'active':''}">考试模式</button>
-          </div>
-          <button class="ghost" id="btn-download">下载离线版</button>
-        </div>
-      </div>
-      <div class="progress-bar"><div class="progress-bar-fill" style="width:${((doneCount)/total*100).toFixed(1)}%"></div></div>
-      <div class="progress-meta">
-        <span>第 ${idx+1} / ${total} 题</span>
-        <span>已完成 ${doneCount} / ${total}</span>
-      </div>
-      <div class="question-card">
-        <div class="question-type ${typeClass}">${typeMap[q.type] || q.type}</div>
-        <div class="question-text">${q.type === 'blank' ? renderBlankQuestionHTML(q.question) : escapeHTML(q.question)}</div>
-        ${bodyHTML}
-        ${feedbackHTML}
-      </div>
-      <div class="quiz-actions">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="ghost" id="btn-prev" ${idx===0?'disabled':''}>← 上一题</button>
-          <button class="ghost" id="btn-reveal" ${isRevealed||isReviewed?'disabled':''}>显示答案</button>
-        </div>
-        <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">
-          ${mode==='practice' && !isReviewed
-            ? `<button id="btn-finish" style="background:var(--c-warning);color:#1a1d29">完成本题 ✓</button>`
-            : ''}
-          ${idx < total-1
-            ? `<button id="btn-next">下一题 →</button>`
-            : `<button id="btn-submit" style="background:var(--c-success)">提交答卷</button>`}
-        </div>
-      </div>
-    `;
-
-    // 绑定
-    $('#btn-prev', view)?.addEventListener('click', () => { currentIdx = Math.max(0, currentIdx-1); questionView(currentIdx); });
-    $('#btn-next', view)?.addEventListener('click', () => { currentIdx = Math.min(total-1, currentIdx+1); questionView(currentIdx); });
-    $('#btn-submit', view)?.addEventListener('click', () => { submitExam(); });
-    $('#btn-download', view)?.addEventListener('click', async () => { const m2 = await loadManifest(); const meta2 = m2.exams.find(e => e.id === examId); downloadOffline(meta2); });
-    $('#btn-reveal', view)?.addEventListener('click', () => {
-      revealed.add(q.id);
-      questionView(currentIdx);
-    });
-    $$('[data-mode]', view).forEach(btn => {
-      btn.addEventListener('click', () => {
-        mode = btn.dataset.mode;
-        questionView(currentIdx);
-      });
-    });
-    const finishBtn = $('#btn-finish', view);
-    if (finishBtn) {
-      finishBtn.addEventListener('click', () => {
-        if (answers[q.id] === undefined) {
-          toast('请先作答');
-          return;
-        }
-        reviewed.add(q.id);
-        questionView(currentIdx);
-      });
-    }
-
-    // 选项绑定：用 change 事件（避免 label click + input click 双重 toggle 导致多选不响应）
-    if ((q.type === 'single' || q.type === 'multiple') && !isReviewed && !isRevealed) {
-      const inputs = q.type === 'single'
-        ? $$('input[type=radio]', view)
-        : $$('input[type=checkbox]', view);
-      inputs.forEach(inp => {
-        inp.addEventListener('change', (e) => {
-          const opt = e.target.closest('.option');
-          const idx = +opt.dataset.idx;
-          if (q.type === 'single') {
-            answers[q.id] = [idx];
-            $$('.option', view).forEach(o => o.classList.toggle('selected', +o.dataset.idx === idx));
-          } else {
-            const cur = new Set(answers[q.id] || []);
-            if (e.target.checked) cur.add(idx); else cur.delete(idx);
-            answers[q.id] = [...cur].sort((a,b)=>a-b);
-            opt.classList.toggle('selected', e.target.checked);
-          }
-        });
-      });
-    } else if (q.type === 'blank' && !isReviewed && !isRevealed) {
-      $$('.blank-input', view).forEach(inp => {
-        inp.addEventListener('input', () => {
-          const bi = +inp.dataset.bi;
-          const cur = answers[q.id] || (q.blanks || []).map(() => '');
-          cur[bi] = inp.value;
-          answers[q.id] = cur;
-        });
-      });
-    }
-  }
-
-  function submitExam() {
-    // 计算分数（错题重做时只统计本次重做的题）
-    let correct = 0;
-    questions.forEach(q => {
-      const r = gradeQuestion(q, answers[q.id]);
-      if (r.correct) correct++;
-    });
-    const score = questions.length ? Math.round(correct / questions.length * 100) : 0;
-    const sessionData = {
-      sessionId,
-      examId: exam.id,
-      title: exam.title + (opts.redoSid ? ' · 错题重做' : ''),
-      finishedAt: Date.now(),
-      answers,
-      correct,
-      total: questions.length,
-      score,
-      redoFrom: opts.redoSid || null,
-    };
-    saveSession(exam.id, sessionId, sessionData);
-    // 错题重做完成后跳转到重做后的结果页（同页）
-    if (opts.redoSid) {
-      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(sessionId));
-    } else {
-      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(sessionId));
-    }
-  }
-
-  questionView(0);
+  render();
 }
 
-// ===== Result =====
-async function renderResult(view, examId, sessionId, opts = {}) {
-  const session = getSession(examId, sessionId);
-  if (!session) {
-    view.innerHTML = `<div class="empty"><div class="ico">🕳️</div>没找到这次答卷记录。<br/><a href="#/">回首页</a></div>`;
-    return;
-  }
-  const manifest = await loadManifest();
-  const meta = manifest.exams.find(e => e.id === examId);
-  if (!meta) throw new Error('找不到套题: ' + examId);
-  const exam = await loadExam(meta);
+/* ---------------- Result view ---------------- */
+function renderResultView(opts){
+  var root=opts.root, qs=opts.scopeQuestions, ans=opts.answers, all=opts.allQuestions||qs;
+  var score=opts.score, correct=opts.correct, total=opts.total;
+  var verdict = score>=85?{t:'优秀',c:'var(--success)',b:'var(--success-soft)'} : score>=60?{t:'及格',c:'var(--warning)',b:'var(--warning-soft)'} : {t:'继续加油',c:'var(--danger)',b:'var(--danger-soft)'};
 
-  // 按题型分类统计（错题重做的 session 只统计 questions 中存在的题）
-  const scopeQuestions = session.redoFrom
-    ? exam.questions.filter(q => {
-        const prev = getSession(exam.id, session.redoFrom);
-        if (!prev) return true;
-        return !gradeQuestion(q, prev.answers[q.id]).correct;
-      })
-    : exam.questions;
-  const typeStats = { single: { total:0, correct:0 }, multiple: { total:0, correct:0 }, blank: { total:0, correct:0 } };
-  scopeQuestions.forEach(q => {
-    const stat = typeStats[q.type];
-    if (!stat) return;
-    stat.total++;
-    const r = gradeQuestion(q, session.answers[q.id]);
-    if (r.correct) stat.correct++;
+  var ts={single:{total:0,correct:0},multiple:{total:0,correct:0},blank:{total:0,correct:0}};
+  qs.forEach(function(q){var s=ts[q.type];if(!s)return;s.total++;if(gradeQuestion(q,ans[q.id]).correct)s.correct++;});
+  var tl={single:'单选',multiple:'多选',blank:'填空'};
+  var statsHTML=['single','multiple','blank'].filter(function(t){return ts[t].total>0;}).map(function(t){
+    var x=ts[t],pct=Math.round(x.correct/x.total*100);var cls=pct>=80?'good':(pct<60?'bad':'');
+    return '<div class="stat-item '+cls+'"><div class="stat-label">'+tl[t]+'</div><div class="stat-num">'+x.correct+'/'+x.total+'</div><div class="stat-pct">'+pct+'%</div></div>';
+  }).join('');
+
+  var listHTML=qs.map(function(q){
+    var no=all.indexOf(q)+1;var ua=ans[q.id];var ok=gradeQuestion(q,ua).correct;
+    var O=q.type!=='blank'?fmtOpts(q):null,uH='',cH='';
+    if(q.type==='single'){uH=(ua&&ua.length)?(O[ua[0]]?O[ua[0]].key+'. '+esc(O[ua[0]].text):'?'):'（未作答）';cH=q.answer.map(function(i){return O[i]?O[i].key+'. '+esc(O[i].text):'';}).join(' / ');}
+    else if(q.type==='multiple'){uH=(ua&&ua.length)?ua.map(function(i){return O[i]?O[i].key:'?';}).join(' '):'（未作答）';cH=q.answer.map(function(i){return O[i]?O[i].key+'. '+esc(O[i].text):'';}).join(' / ');}
+    else{uH=(ua&&ua.length)?ua.map(function(v,i){return '空'+(i+1)+': <b>'+esc(v||'（空）')+'</b>';}).join('<br/>'):'（未作答）';cH=q.blanks.map(function(a,i){return '空'+(i+1)+': <b>'+a.map(esc).join(' / ')+'</b>';}).join('<br/>');}
+    return '<div class="result-q '+(ok?'correct':'wrong')+'"><div class="head"><div class="qno">第 '+no+' 题<span class="ty">'+typeName(q.type)+'</span></div><div class="badge '+(ok?'correct':'wrong')+'">'+(isAnswered(q,ua)?(ok?'答对':'答错'):'未作答')+'</div></div>'+
+      '<div class="qtext">'+(q.type==='blank'?renderBlankHTML(q.question):esc(q.question))+'</div>'+
+      '<div class="line">你的答案：'+uH+'</div>'+
+      (!ok?'<div class="line">正确答案：'+cH+'</div>':'')+
+      (q.explanation?'<div class="explain">解析 · '+esc(q.explanation)+'</div>':'')+'</div>';
+  }).join('');
+
+  var R=54, C=2*Math.PI*R, off=C*(1-score/100);
+  var actionsHTML=(opts.actions||[]).map(function(a,i){return '<button class="btn '+(a.kind||'ghost')+'" data-act="'+i+'">'+esc(a.label)+'</button>';}).join('');
+
+  root.innerHTML=''+
+    (opts.redoLabel?'<div class="redo-banner">'+esc(opts.redoLabel)+'</div>':'')+
+    '<div class="result-actions">'+actionsHTML+'</div>'+
+    '<div class="score-card fade-in">'+
+      '<div class="score-dial"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--surface-2)" stroke-width="11"/><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+verdict.c+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><div style="display:grid;place-items:center;text-align:center"><div class="pct">'+score+'<span style="font-size:16px">%</span></div><div class="pl">正确率</div></div></div>'+
+      '<div class="score-info"><div class="big">答对 '+correct+' / '+total+' 题</div><div class="sub">'+esc(opts.subtitle||'')+'</div><span class="verdict" style="color:'+verdict.c+';background:'+verdict.b+'">'+verdict.t+'</span></div>'+
+    '</div>'+
+    (statsHTML?'<div class="stats-card"><div class="stitle">分题型统计</div><div class="stats-row">'+statsHTML+'</div></div>':'')+
+    '<div class="section-label">逐题回顾</div>'+
+    '<div class="result-list">'+listHTML+'</div>';
+
+  Array.prototype.slice.call(root.querySelectorAll('[data-act]')).forEach(function(b){
+    b.onclick=function(){var a=opts.actions[+b.dataset.act];a&&a.onClick&&a.onClick();};
   });
-  const typeLabel = { single:'单选', multiple:'多选', blank:'填空' };
-  const wrongTotal = (session.total || scopeQuestions.length) - (session.correct || 0);
-
-  const questionsHTML = scopeQuestions.map((q) => {
-    const originalIdx = exam.questions.indexOf(q);
-    const userAns = session.answers[q.id];
-    const r = gradeQuestion(q, userAns);
-    const isCorrect = r.correct;
-    const status = userAns === undefined ? '未作答' : (isCorrect ? '答对' : '答错');
-
-    let userAnsHTML = '';
-    let correctAnsHTML = '';
-    if (q.type === 'single') {
-      const opts = formatOptions(q);
-      userAnsHTML = userAns && userAns.length ? `${opts[userAns[0]]?.key || '?'}. ${escapeHTML(opts[userAns[0]]?.text || '')}` : '（未作答）';
-      correctAnsHTML = q.answer.map(idx => `${opts[idx]?.key || '?'}. ${escapeHTML(opts[idx]?.text || '')}`).join(' / ');
-    } else if (q.type === 'multiple') {
-      const opts = formatOptions(q);
-      userAnsHTML = (userAns && userAns.length) ? userAns.map(idx => opts[idx]?.key || '?').join('') : '（未作答）';
-      correctAnsHTML = q.answer.map(idx => opts[idx]?.key || '?').join('') + ' — ' + q.answer.map(idx => opts[idx]?.text || '').join(' / ');
-    } else if (q.type === 'blank') {
-      userAnsHTML = (userAns && userAns.length) ? userAns.map((v, i) => `空${i+1}: <b>${escapeHTML(v || '（空）')}</b>`).join('<br/>') : '（未作答）';
-      correctAnsHTML = q.blanks.map((arr, i) => `空${i+1}: <b>${arr.map(escapeHTML).join(' / ')}</b>`).join('<br/>');
-    }
-
-    return `<div class="result-question ${isCorrect ? 'correct':'wrong'}">
-      <div class="head">
-        <div><b>第 ${originalIdx+1} 题</b> · <span style="color:var(--c-text-3);font-size:13px">${({single:'单选',multiple:'多选',blank:'填空'})[q.type]}</span></div>
-        <div class="badge ${isCorrect ? 'correct':'wrong'}">${status}</div>
-      </div>
-      <div class="qtext">${q.type==='blank' ? renderBlankQuestionHTML(q.question) : escapeHTML(q.question)}</div>
-      <div class="line">你的答案：${userAnsHTML}</div>
-      ${!isCorrect ? `<div class="line">正确答案：${correctAnsHTML}</div>` : ''}
-      ${q.explanation ? `<div class="explain">💡 ${escapeHTML(q.explanation)}</div>` : ''}
-    </div>`;
-  }).join('');
-
-  const typeStatsHTML = ['single','multiple','blank']
-    .filter(t => typeStats[t].total > 0)
-    .map(t => {
-      const s = typeStats[t];
-      const pct = Math.round(s.correct / s.total * 100);
-      const klass = pct >= 80 ? 'good' : (pct < 60 ? 'bad' : '');
-      return `<div class="stat-item ${klass}">
-        <div class="stat-label">${typeLabel[t]}正确率</div>
-        <div class="stat-num">${s.correct}/${s.total}</div>
-        <div class="stat-pct">${pct}%</div>
-      </div>`;
-    }).join('');
-
-  view.innerHTML = `
-    ${session.redoFrom ? `<div class="redo-banner">🔁 错题重做结果（基于原卷 ID: ${escapeHTML(session.redoFrom.slice(-6))}）</div>` : ''}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <a href="#/" style="color:var(--c-text-2);font-size:13px">← 返回列表</a>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="ghost" id="btn-redo">重新练习</button>
-        ${wrongTotal > 0 ? `<button class="btn-warn" id="btn-redo-wrong">重做错题 (${wrongTotal})</button>` : ''}
-        <button class="ghost" id="btn-download">下载离线版</button>
-      </div>
-    </div>
-    <div class="score-card">
-      <div class="score-num">${session.score}%</div>
-      <div class="score-sub">答对 ${session.correct} / ${session.total} 题 · ${escapeHTML(session.title)}</div>
-    </div>
-    <div class="stats-card">
-      <div style="font-weight:600">分题型统计</div>
-      <div class="stats-row">${typeStatsHTML}</div>
-    </div>
-    <div id="qlist">${questionsHTML}</div>
-  `;
-  $('#btn-redo', view).addEventListener('click', () => navigate('/exam/' + encodeURIComponent(examId)));
-  $('#btn-redo-wrong', view)?.addEventListener('click', () => navigate('/exam/' + encodeURIComponent(examId) + '?redo=' + encodeURIComponent(sessionId)));
-  $('#btn-download', view).addEventListener('click', () => downloadOffline(meta));
 }
+</script>
 
-// ===== Offline HTML export =====
-async function downloadOffline(meta) {
-  const exam = await loadExam(meta);
-  const html = buildOfflineHTML(exam);
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const safeName = (meta.title || meta.id).replace(/[\\/:*?"<>|]/g, '_');
-  a.href = url;
-  a.download = safeName + '.html';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
-  toast('已下载离线版：' + a.download);
-}
-
-// 把当前页面变成自包含 HTML（仅题目数据 + 必要 CSS/JS 注入）
-function buildOfflineHTML(exam) {
-  const dataJSON = JSON.stringify(exam).replace(/<\/script/g, '<\\/script');
-  // 用 srcdoc 思路：直接生成完整 HTML 文档
-  return `<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#4a7dff" />
-<title>${escapeHTML(exam.title)} · 离线版</title>
-<style>
-:root{--c-bg:#f7f8fb;--c-surface:#fff;--c-surface-2:#f0f2f7;--c-border:#e3e6ee;--c-text:#1a1d29;--c-text-2:#5a6075;--c-text-3:#8b91a3;--c-primary:#4a7dff;--c-primary-2:#2f5dd1;--c-success:#3ec177;--c-danger:#e15c5c;--radius:12px;--radius-sm:8px}
-@media(prefers-color-scheme:dark){:root{--c-bg:#14161e;--c-surface:#1c1f2a;--c-surface-2:#252937;--c-border:#2f3344;--c-text:#ecedf2;--c-text-2:#b1b6c7;--c-text-3:#7a8095}}
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--c-bg);color:var(--c-text)}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
-.container{max-width:760px;margin:0 auto;padding:24px 20px 80px}
-.hero{background:linear-gradient(135deg,var(--c-primary),#7da3ff);color:#fff;border-radius:var(--radius);padding:22px;margin-bottom:20px}
-.hero h1{margin:0 0 6px;font-size:22px}.hero p{margin:0;opacity:.9;font-size:14px}
-.progress-bar{background:var(--c-surface-2);border-radius:999px;height:6px;overflow:hidden;margin-bottom:8px}
-.progress-bar-fill{background:linear-gradient(90deg,var(--c-primary),var(--c-success));height:100%;width:0%;transition:width .25s}
-.progress-meta{display:flex;justify-content:space-between;color:var(--c-text-3);font-size:13px;margin-bottom:18px}
-.question-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
-.question-type{display:inline-block;font-size:11px;color:var(--c-primary);background:rgba(74,125,255,.1);padding:2px 10px;border-radius:999px;margin-bottom:10px;font-weight:600}
-.question-type.multiple{color:#f5b740;background:rgba(245,183,64,.12)}
-.question-type.blank{color:#3ec177;background:rgba(62,193,119,.12)}
-.question-text{font-size:16px;font-weight:500;margin:0 0 16px;white-space:pre-wrap}
-.options{display:flex;flex-direction:column;gap:8px}
-.option{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer;transition:background .1s,border-color .1s;background:var(--c-surface)}
-.option:hover{background:var(--c-surface-2)}.option.selected{background:rgba(74,125,255,.08);border-color:var(--c-primary)}
-.option input{margin-top:4px;flex-shrink:0;accent-color:var(--c-primary)}
-.option-key{color:var(--c-text-3);font-weight:600;margin-right:8px;font-family:ui-monospace,monospace}
-.option.selected .option-key{color:var(--c-primary)}
-.blank-area{display:flex;flex-direction:column;gap:12px}
-.blank-row{display:flex;align-items:center;gap:12px;color:var(--c-text-2);font-size:14px}
-.blank-index{flex-shrink:0;width:28px;height:28px;background:var(--c-surface-2);color:var(--c-text-2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
-.blank-input{flex:1;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);padding:10px 14px;border-radius:var(--radius-sm);font-size:15px;font-family:inherit}
-.blank-input:focus{outline:0;border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(74,125,255,.15)}
-.blank-preview{margin-top:14px;padding:12px 14px;background:var(--c-surface-2);border-radius:var(--radius-sm);font-size:14px;color:var(--c-text-2);white-space:pre-wrap}
-.blank-preview b{color:var(--c-text)}
-.quiz-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px}
-.quiz-actions .right{display:flex;gap:10px;flex-wrap:wrap}
-button{cursor:pointer;border:0;background:var(--c-primary);color:#fff;padding:10px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:inherit}
-button:hover{background:var(--c-primary-2)}button.ghost{background:transparent;color:var(--c-text);border:1px solid var(--c-border)}
-button.ghost:hover{background:var(--c-surface-2);color:var(--c-text)}
-button:disabled{opacity:.5;cursor:not-allowed}
-.score-card{background:linear-gradient(135deg,var(--c-primary),#7da3ff);color:#fff;border-radius:var(--radius);padding:26px;text-align:center;margin-bottom:22px}
-.score-num{font-size:56px;font-weight:700;line-height:1;margin-bottom:4px}
-.score-sub{opacity:.92;font-size:14px}
-.result-question{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px}
-.result-question.correct{border-left:4px solid var(--c-success)}.result-question.wrong{border-left:4px solid var(--c-danger)}
-.result-question .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.badge{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px}
-.badge.correct{background:rgba(62,193,119,.15);color:var(--c-success)}.badge.wrong{background:rgba(225,92,92,.15);color:var(--c-danger)}
-.result-question .qtext{font-weight:500;margin-bottom:10px;white-space:pre-wrap}
-.result-question .line{font-size:13px;color:var(--c-text-2);margin:4px 0}
-.result-question .line b{color:var(--c-text)}
-.result-question .explain{margin-top:8px;padding:10px 12px;background:var(--c-surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--c-text-2)}
-.mode-toggle{display:inline-flex;background:var(--c-surface-2);border-radius:999px;padding:3px;font-size:13px;margin-bottom:10px}
-.mode-toggle button{padding:6px 14px;border-radius:999px;background:transparent;color:var(--c-text-2);font-weight:500;font-size:13px;margin:0}
-.mode-toggle button.active{background:var(--c-primary);color:#fff}
-.feedback{margin-top:16px;padding:14px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6}
-.feedback.correct{background:rgba(62,193,119,.10);border:1px solid rgba(62,193,119,.35)}
-.feedback.wrong{background:rgba(225,92,92,.08);border:1px solid rgba(225,92,92,.35)}
-.feedback.revealed{background:rgba(245,183,64,.10);border:1px solid rgba(245,183,64,.35)}
-.feedback-title{font-weight:600;margin-bottom:6px}
-.feedback-line{font-size:13px;margin:4px 0;color:var(--c-text-2)}
-.feedback-line b{color:var(--c-text)}
-.feedback .explain{margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.4);border-radius:var(--radius-sm);font-size:13px}
-.option.locked{pointer-events:none;opacity:.85}
-.option.correct-opt{background:rgba(62,193,119,.15);border-color:var(--c-success)}
-.option.wrong-opt{background:rgba(225,92,92,.10);border-color:var(--c-danger)}
-.blank-input.locked{background:var(--c-surface-2);pointer-events:none}
-.blank-input.correct-blank{border-color:var(--c-success);background:rgba(62,193,119,.10)}
-.blank-input.wrong-blank{border-color:var(--c-danger);background:rgba(225,92,92,.08)}
-.stats-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:18px}
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:14px}
-.stat-item{background:var(--c-surface-2);border-radius:var(--radius-sm);padding:12px 14px;text-align:center}
-.stat-item .stat-label{font-size:12px;color:var(--c-text-3);margin-bottom:4px}
-.stat-item .stat-num{font-size:22px;font-weight:700;color:var(--c-text)}
-.stat-item .stat-pct{font-size:12px;color:var(--c-text-2);margin-top:2px}
-.stat-item.good .stat-num{color:var(--c-success)}
-.stat-item.bad .stat-num{color:var(--c-danger)}
-.btn-warn{background:#f5b740!important;color:#1a1d29!important}
-.btn-warn:hover{background:#e0a536!important}
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="hero"><h1 id="hero-title"></h1><p id="hero-desc"></p></div>
-  <div id="view"></div>
-</div>
+<!-- ============ Main app bootstrap ============ -->
 <script>
-const EXAM = ${dataJSON};
-const STORAGE_KEY = 'exam-offline-' + EXAM.id;
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
 
-function \$(s,r=document){return r.querySelector(s)}
-function \$\$(s,r=document){return Array.from(r.querySelectorAll(s))}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderBlankHTML(t){const ps=String(t).split('___');let h='';ps.forEach((s,i)=>{h+=esc(s);if(i<ps.length-1)h+='<b style="color:var(--c-primary)">[空'+(i+1)+']</b>'});return h}
-function gradeQuestion(q,ua){
-  if(ua===undefined||ua===null)return {correct:false};
-  const eq=(a,b)=>a.length===b.length&&[...a].sort().every((v,i)=>v===[...b].sort()[i]);
-  if(q.type==='single'||q.type==='multiple')return {correct:eq(ua,q.answer)};
-  if(q.type==='blank'){if(!ua||ua.length!==q.blanks.length)return {correct:false};const n=s=>String(s||'').trim().toLowerCase();return {correct:ua.every((u,i)=>q.blanks[i].map(n).includes(n(u)))}}
-  return {correct:false};
-}
-function fmtOpts(q){const L=['A','B','C','D','E','F','G','H','I','J'];return (q.options||[]).map((o,i)=>({key:L[i],text:typeof o==='string'?o:(o.text??'')}))}
-function loadSession(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch{return null}}
-function saveSession(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
+/* inject shared engine */
+(function(){var s=document.createElement('script');s.textContent=$('#engine-js').textContent;document.head.appendChild(s);})();
 
-const state={answers:{},idx:0,reviewed:{},revealed:{},mode:'practice'};
+window.__toast=function(msg,ms){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast._t);window.__toast._t=setTimeout(function(){t.classList.remove('show');},ms||2000);};
+var toast=window.__toast;
 
-function showQuestion(){
-  const q=EXAM.questions[state.idx];
-  const total=EXAM.questions.length;
-  const ua=state.answers[q.id];
-  const isRev=!!state.reviewed[q.id];
-  const isRevealed=!!state.revealed[q.id];
-  const map={single:'单选',multiple:'多选',blank:'填空'};
-  let body='';
-  if(q.type==='single'){
-    const O=fmtOpts(q);
-    const ci=q.answer[0],ui=ua?ua[0]:-1;
-    body='<div class="options">'+O.map((o,i)=>{
-      let cls='option';
-      if(isRev||isRevealed)cls+=' locked';
-      if(ua&&ui===i)cls+=' selected';
-      if(isRev&&ui===i&&ui!==ci)cls+=' wrong-opt';
-      if(isRev||isRevealed){if(i===ci)cls+=' correct-opt';}
-      return \`<label class="\${cls}" data-idx="\${i}"><input type="radio" \${ua&&ui===i?'checked':''} \${isRev||isRevealed?'disabled':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`;
-    }).join('')+'</div>';
-  }else if(q.type==='multiple'){
-    const O=fmtOpts(q);const S=new Set(ua||[]);const CS=new Set(q.answer);
-    body='<div class="options">'+O.map((o,i)=>{
-      let cls='option';
-      if(isRev||isRevealed)cls+=' locked';
-      if(S.has(i))cls+=' selected';
-      if(isRev){if(S.has(i)&&!CS.has(i))cls+=' wrong-opt';if(CS.has(i))cls+=' correct-opt';}
-      else if(isRevealed){if(CS.has(i))cls+=' correct-opt';}
-      return \`<label class="\${cls}" data-idx="\${i}"><input type="checkbox" \${S.has(i)?'checked':''} \${isRev||isRevealed?'disabled':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`;
-    }).join('')+'</div>';
-  }else if(q.type==='blank'){
-    const ub=ua||(q.blanks||[]).map(()=>'');
-    body='<div class="blank-area">'+q.blanks.map((_,i)=>{
-      let cls='blank-input';
-      if(isRev||isRevealed)cls+=' locked';
-      if(isRev){const u=(ub[i]||'').trim().toLowerCase();const ok=q.blanks[i].map(s=>s.trim().toLowerCase()).includes(u);cls+=ok?' correct-blank':' wrong-blank';}
-      return \`<div class="blank-row"><div class="blank-index">\${i+1}</div><input class="\${cls}" data-bi="\${i}" value="\${esc(ub[i]||'')}" placeholder="空 \${i+1} 答案" \${isRev||isRevealed?'readonly':''}/></div>\`;
-    }).join('')+'</div><div class="blank-preview">'+renderBlankHTML(q.question)+'</div>';
-  }
-  let fb='';
-  if(isRev){
-    const r=gradeQuestion(q,ua);const ok=r.correct;
-    let uH='',cH='';
-    if(q.type==='single'){const O=fmtOpts(q);uH=ua&&ua.length?\`\${O[ua[0]]?.key}. \${esc(O[ua[0]]?.text||'')}\`:'（未作答）';cH=\`\${O[q.answer[0]]?.key}. \${esc(O[q.answer[0]]?.text||'')}\`;}
-    else if(q.type==='multiple'){const O=fmtOpts(q);uH=(ua&&ua.length)?ua.map(idx=>O[idx]?.key).join(''):'（未作答）';cH=q.answer.map(idx=>\`<b>\${O[idx]?.key}</b>. \${esc(O[idx]?.text||'')}\`).join(' / ');}
-    else if(q.type==='blank'){uH=(ua&&ua.length)?ua.map((v,i)=>\`空\${i+1}: <b>\${esc(v||'（空）')}</b>\`).join('<br/>'):'（未作答）';cH=q.blanks.map((arr,i)=>\`空\${i+1}: <b>\${arr.map(esc).join(' / ')}</b>\`).join('<br/>');}
-    fb=\`<div class="feedback \${ok?'correct':'wrong'}">
-      <div class="feedback-title">\${ok?'✓ 答对了':'✗ 答错了'}</div>
-      <div class="feedback-line">你的答案：\${uH}</div>
-      \${!ok?'<div class="feedback-line">正确答案：'+cH+'</div>':''}
-      \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
-    </div>\`;
-  }else if(isRevealed){
-    let cH='';
-    if(q.type==='single'){const O=fmtOpts(q);cH=\`\${O[q.answer[0]]?.key}. \${esc(O[q.answer[0]]?.text||'')}\`;}
-    else if(q.type==='multiple'){const O=fmtOpts(q);cH=q.answer.map(idx=>\`<b>\${O[idx]?.key}</b>. \${esc(O[idx]?.text||'')}\`).join(' / ');}
-    else if(q.type==='blank'){cH=q.blanks.map((arr,i)=>\`空\${i+1}: <b>\${arr.map(esc).join(' / ')}</b>\`).join('<br/>');}
-    fb=\`<div class="feedback revealed">
-      <div class="feedback-title">👀 仅供参考</div>
-      <div class="feedback-line">参考答案：\${cH}</div>
-      \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
-    </div>\`;
-  }
-  const done=Object.keys(state.reviewed).length+Object.keys(state.revealed).length;
-  \$('#view').innerHTML=\`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div class="mode-toggle"><button data-mode="practice" class="\${state.mode==='practice'?'active':''}">练习模式</button><button data-mode="exam" class="\${state.mode==='exam'?'active':''}">考试模式</button></div>
-      <div style="color:var(--c-text-3);font-size:12px">离线版 · 数据存在本地</div>
-    </div>
-    <div class="progress-bar"><div class="progress-bar-fill" style="width:\${(done/total*100).toFixed(1)}%"></div></div>
-    <div class="progress-meta"><span>第 \${state.idx+1} / \${total} 题</span><span>已完成 \${done} / \${total}</span></div>
-    <div class="question-card">
-      <div class="question-type \${q.type}">\${map[q.type]||q.type}</div>
-      <div class="question-text">\${q.type==='blank'?renderBlankHTML(q.question):esc(q.question)}</div>
-      \${body}
-      \${fb}
-    </div>
-    <div class="quiz-actions">
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="btn-prev" \${state.idx===0?'disabled':''}>← 上一题</button><button class="ghost" id="btn-reveal" \${isRevealed||isRev?'disabled':''}>显示答案</button></div>
-      <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">
-        \${state.mode==='practice'&&!isRev?'<button id="btn-finish" style="background:#f5b740;color:#1a1d29">完成本题 ✓</button>':''}
-        \${state.idx<total-1?'<button id="btn-next">下一题 →</button>':'<button id="btn-submit" style="background:var(--c-success)">提交答卷</button>'}
-      </div>
-    </div>\`;
-  \$('#btn-prev')?.addEventListener('click',()=>{state.idx=Math.max(0,state.idx-1);showQuestion()});
-  \$('#btn-next')?.addEventListener('click',()=>{state.idx=Math.min(total-1,state.idx+1);showQuestion()});
-  \$('#btn-submit')?.addEventListener('click',()=>{submit()});
-  \$('#btn-reveal')?.addEventListener('click',()=>{state.revealed[q.id]=true;showQuestion()});
-  \$\$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;showQuestion()});
-  const fb2=\$('#btn-finish');
-  if(fb2){fb2.onclick=()=>{if(state.answers[q.id]===undefined){alert('请先作答');return;}state.reviewed[q.id]=true;showQuestion();};}
-  if((q.type==='single'||q.type==='multiple')&&!isRev&&!isRevealed){
-    const inputs=q.type==='single'?\$$('input[type=radio]'):\$$('input[type=checkbox]');
-    inputs.forEach(inp=>inp.addEventListener('change',(e)=>{
-      const opt=e.target.closest('.option');const i=+opt.dataset.idx;
-      if(q.type==='single'){
-        state.answers[q.id]=[i];
-        \$\$('.option').forEach(o=>o.classList.toggle('selected',+o.dataset.idx===i));
-      }else{
-        const cur=new Set(state.answers[q.id]||[]);
-        if(e.target.checked)cur.add(i);else cur.delete(i);
-        state.answers[q.id]=[...cur].sort((a,b)=>a-b);
-        opt.classList.toggle('selected',e.target.checked);
-      }
-    }));
-  }else if(q.type==='blank'&&!isRev&&!isRevealed){
-    \$\$('.blank-input').forEach(inp=>inp.oninput=()=>{const bi=+inp.dataset.bi;const cur=state.answers[q.id]||(q.blanks||[]).map(()=>'');cur[bi]=inp.value;state.answers[q.id]=cur;});
-  }
+/* theme button */
+function syncThemeBtn(){$('#theme-btn').textContent=themeGlyph();}
+applyTheme();syncThemeBtn();
+$('#theme-btn').onclick=function(){toggleTheme();syncThemeBtn();};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getThemePref()==='auto'){applyTheme();syncThemeBtn();}});
+$('#brand').onclick=function(){navigate('/');};
+window.addEventListener('scroll',function(){$('#app-header').classList.toggle('scrolled',window.scrollY>4);},{passive:true});
+
+/* storage */
+var STORE_KEY=function(id){return 'exam-practice:sessions:'+id;};
+function loadSessions(id){try{return JSON.parse(localStorage.getItem(STORE_KEY(id))||'{}');}catch(e){return {};}}
+function saveSession(id,sid,data){var all=loadSessions(id);all[sid]=data;localStorage.setItem(STORE_KEY(id),JSON.stringify(all));}
+function getSession(id,sid){return loadSessions(id)[sid];}
+function listSessions(id){return Object.values(loadSessions(id)).sort(function(a,b){return (b.finishedAt||0)-(a.finishedAt||0);});}
+function countAllSessions(){var n=0;for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('exam-practice:sessions:')===0){try{n+=Object.keys(JSON.parse(localStorage.getItem(k))).length;}catch(e){}}}return n;}
+
+/* data */
+async function loadManifest(){var r=await fetch('./data/manifest.json',{cache:'no-cache'});if(!r.ok)throw new Error('加载题库列表失败');return r.json();}
+async function loadExam(meta){var r=await fetch('./data/'+meta.file,{cache:'no-cache'});if(!r.ok)throw new Error('加载套题失败：'+meta.file);return r.json();}
+
+/* router */
+function getRoute(){return (location.hash||'#/').replace(/^#/,'')||'/';}
+function navigate(p){location.hash='#'+p;}
+window.addEventListener('hashchange',render);
+window.addEventListener('DOMContentLoaded',render);
+
+function updateHeaderMeta(){var n=countAllSessions();$('#header-meta').textContent=n>0?(n+' 次记录'):'';}
+
+async function render(){
+  var route=getRoute(),view=$('#view');
+  view.innerHTML='<div class="empty"><div class="spinner"></div>加载中…</div>';
+  // cleanup any open drawer key handler from quiz
+  try{
+    if(route==='/'||route===''){await renderHome(view);}
+    else if(route.indexOf('/exam/')===0){
+      var rest=route.slice(6),pp=rest.split('?'),id=decodeURIComponent(pp[0]);
+      var params=new URLSearchParams(pp[1]||'');
+      await renderExam(view,id,{redoSid:params.get('redo')||null});
+    } else if(route.indexOf('/result/')===0){
+      var rest2=route.slice(8),pp2=rest2.split('?'),parts=pp2[0].split('/');
+      await renderResult(view,decodeURIComponent(parts[0]),decodeURIComponent(parts[1]||''));
+    } else {view.innerHTML='<div class="empty"><div class="ico">🧭</div>页面不存在<br/><button class="btn" onclick="navigate(\'/\')">回首页</button></div>';}
+    updateHeaderMeta();
+    window.scrollTo(0,0);
+  }catch(e){console.error(e);view.innerHTML='<div class="empty"><div class="ico">⚠️</div>'+esc(e.message)+'<br/><button class="btn" onclick="navigate(\'/\')">回首页</button></div>';}
 }
-function submit(){
-  let c=0;EXAM.questions.forEach(q=>{if(gradeQuestion(q,state.answers[q.id]).correct)c++});
-  const s=EXAM.questions.length?Math.round(c/EXAM.questions.length*100):0;
-  const sess={answers:state.answers,correct:c,total:EXAM.questions.length,score:s,finishedAt:Date.now()};
-  saveSession(sess);showResult(sess);
-}
-function showResult(sess){
-  const qs=EXAM.questions.map((q,i)=>{
-    const ua=sess.answers[q.id];
-    const r=gradeQuestion(q,ua);
-    const ok=r.correct;
-    let uH='',cH='';
-    if(q.type==='single'){const O=fmtOpts(q);uH=ua&&ua.length?\`\${O[ua[0]]?.key}. \${esc(O[ua[0]]?.text||'')}\`:'（未作答）';cH=q.answer.map(idx=>\`\${O[idx]?.key}. \${esc(O[idx]?.text||'')}\`).join(' / ');}
-    else if(q.type==='multiple'){const O=fmtOpts(q);uH=(ua&&ua.length)?ua.map(idx=>O[idx]?.key).join(''):'（未作答）';cH=q.answer.map(idx=>O[idx]?.key).join('')+' — '+q.answer.map(idx=>esc(O[idx]?.text||'')).join(' / ');}
-    else if(q.type==='blank'){uH=(ua&&ua.length)?ua.map((v,i)=>\`空\${i+1}: <b>\${esc(v||'（空）')}</b>\`).join('<br/>'):'（未作答）';cH=q.blanks.map((a,i)=>\`空\${i+1}: <b>\${a.map(esc).join(' / ')}</b>\`).join('<br/>');}
-    return \`<div class="result-question \${ok?'correct':'wrong'}">
-      <div class="head"><div><b>第 \${i+1} 题</b> · <span style="color:var(--c-text-3);font-size:13px">\${({single:'单选',multiple:'多选',blank:'填空'})[q.type]}</span></div><div class="badge \${ok?'correct':'wrong'}">\${ua===undefined?'未作答':(ok?'答对':'答错')}</div></div>
-      <div class="qtext">\${q.type==='blank'?renderBlankHTML(q.question):esc(q.question)}</div>
-      <div class="line">你的答案：\${uH}</div>
-      \${!ok?'<div class="line">正确答案：'+cH+'</div>':''}
-      \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
-    </div>\`;
+
+/* ===== Home ===== */
+async function renderHome(view){
+  var manifest=await loadManifest();
+  var exams=await Promise.all(manifest.exams.map(async function(m){
+    try{var full=await loadExam(m);return Object.assign({},m,{questionCount:(full.questions||[]).length});}
+    catch(e){return Object.assign({},m,{questionCount:0,error:e.message});}
+  }));
+  var solo=exams.length===1;
+  var cards=exams.map(function(ex){
+    var sessions=listSessions(ex.id);
+    var best=sessions.length?Math.max.apply(null,sessions.map(function(s){return s.score||0;})):null;
+    return '<div class="exam-card'+(solo?' solo':'')+'" data-id="'+esc(ex.id)+'">'+
+      '<div class="exam-card-top"><div class="exam-card-title">'+esc(ex.title)+'</div>'+
+        (best!==null?'<div class="score-ring"><div class="n">'+best+'%</div><div class="l">最高</div></div>':'')+'</div>'+
+      '<div class="exam-card-meta">'+
+        (ex.subject?'<span class="chip">'+esc(ex.subject)+'</span>':'')+
+        (ex.examDate?'<span class="chip">'+esc(ex.examDate)+'</span>':'')+
+        '<span class="chip">'+ex.questionCount+' 题</span>'+
+        (ex.duration?'<span class="chip">'+esc(String(ex.duration))+' 分钟</span>':'')+
+        (sessions.length?'<span class="chip">'+sessions.length+' 次记录</span>':'')+
+      '</div>'+
+      (ex.description?'<div class="exam-card-desc">'+esc(ex.description)+'</div>':'')+
+      (ex.error?'<div class="exam-card-desc" style="color:var(--danger)">加载失败：'+esc(ex.error)+'</div>':'')+
+      '<div class="exam-card-actions">'+
+        '<button class="btn" data-act="start">开始练习</button>'+
+        (sessions.length?'<button class="btn ghost" data-act="history">历史 ('+sessions.length+')</button>':'')+
+        '<button class="btn subtle" data-act="download">下载离线版</button>'+
+      '</div></div>';
   }).join('');
-  const ts={single:{total:0,correct:0},multiple:{total:0,correct:0},blank:{total:0,correct:0}};
-  EXAM.questions.forEach(q=>{const t=ts[q.type];if(!t)return;t.total++;if(gradeQuestion(q,sess.answers[q.id]).correct)t.correct++;});
-  const wrongTotal=sess.total-sess.correct;
-  const tl={single:'单选',multiple:'多选',blank:'填空'};
-  const statsHTML=['single','multiple','blank'].filter(t=>ts[t].total>0).map(t=>{const x=ts[t];const pct=Math.round(x.correct/x.total*100);const cls=pct>=80?'good':(pct<60?'bad':'');return \`<div class="stat-item \${cls}"><div class="stat-label">\${tl[t]}正确率</div><div class="stat-num">\${x.correct}/\${x.total}</div><div class="stat-pct">\${pct}%</div></div>\`;}).join('');
-  \$('#view').innerHTML=\`
-    <div style="display:flex;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div style="color:var(--c-text-3);font-size:13px">离线版 · 数据保存在本浏览器</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="ghost" id="btn-redo">重新练习</button></div>
-    </div>
-    <div class="score-card"><div class="score-num">\${sess.score}%</div><div class="score-sub">答对 \${sess.correct} / \${sess.total} 题</div></div>
-    <div class="stats-card"><div style="font-weight:600">分题型统计</div><div class="stats-row">\${statsHTML}</div></div>
-    <div>\${qs}</div>
-  \`;
-  \$('#btn-redo').onclick=()=>{state.answers={};state.idx=0;state.reviewed={};state.revealed={};showQuestion()};
+  view.innerHTML='<div class="hero fade-in"><h1>考前刷题</h1><p>选择一套试卷开始练习，支持练习与考试两种模式，可下载离线版随时刷。</p></div><div class="exam-grid">'+cards+'</div>';
+  $$('.exam-card',view).forEach(function(card){
+    var id=card.dataset.id,ex=exams.find(function(e){return e.id===id;});
+    $('[data-act="start"]',card).onclick=function(){navigate('/exam/'+encodeURIComponent(id));};
+    var h=$('[data-act="history"]',card);if(h)h.onclick=function(){showHistory(ex);};
+    $('[data-act="download"]',card).onclick=function(){downloadOffline(ex);};
+  });
 }
-function init(){
-  \$('#hero-title').textContent=EXAM.title;
-  \$('#hero-desc').textContent=(EXAM.subject?\`科目：\${EXAM.subject} · \`:'')+(EXAM.examDate?\`考试：\${EXAM.examDate} · \`:'')+\`共 \${EXAM.questions.length} 题\`;
-  const sess=loadSession();
-  if(sess&&confirm('发现上次答卷记录 (\${sess.score}%)，是否查看？\\n确定查看结果，取消重新练习。')){showResult(sess)}else{state.answers={};state.idx=0;state.reviewed={};state.revealed={};showQuestion()}
+
+function showHistory(ex){
+  var sessions=listSessions(ex.id);
+  var items=sessions.map(function(s){
+    var t=new Date(s.finishedAt).toLocaleString('zh-CN',{hour12:false,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return '<div class="hist-item" data-sid="'+esc(s.sessionId)+'"><span class="when">'+esc(t)+(s.redoFrom?' · 错题重做':'')+'</span><span class="sc">'+s.score+'%<small>'+s.correct+'/'+s.total+'</small></span></div>';
+  }).join('')||'<div class="empty" style="padding:30px 0">暂无历史记录</div>';
+  var wrap=document.createElement('div');
+  wrap.innerHTML='<div class="scrim show" data-close></div><aside class="drawer show"><div class="drawer-head"><h3>'+esc(ex.title)+' · 历史</h3><button class="icon-btn" data-close>✕</button></div><div class="drawer-body">'+items+'</div></aside>';
+  document.body.appendChild(wrap);
+  function close(){wrap.remove();}
+  $$('[data-close]',wrap).forEach(function(b){b.onclick=close;});
+  $$('.hist-item',wrap).forEach(function(it){it.onclick=function(){close();navigate('/result/'+encodeURIComponent(ex.id)+'/'+encodeURIComponent(it.dataset.sid));};});
 }
-init();
-<\/script>
-</body>
-</html>`;
+
+/* ===== Exam ===== */
+async function renderExam(view,examId,o){
+  var manifest=await loadManifest();
+  var meta=manifest.exams.find(function(e){return e.id===examId;});
+  if(!meta)throw new Error('找不到套题：'+examId);
+  var exam=await loadExam(meta);
+  var questions=exam.questions,redoInfo=null;
+  if(o.redoSid){
+    var prev=getSession(exam.id,o.redoSid);
+    if(!prev)throw new Error('找不到原始答卷记录');
+    questions=exam.questions.filter(function(q){return !gradeQuestion(q,prev.answers[q.id]).correct;});
+    if(!questions.length){toast('这次没有错题');navigate('/result/'+encodeURIComponent(exam.id)+'/'+encodeURIComponent(o.redoSid));return;}
+    redoInfo={original:exam.questions.length};
+  }
+  var persistKey='exam-practice:progress:'+exam.id+(o.redoSid?':redo:'+o.redoSid:'');
+  var initialState=null,resumed=false;
+  if(!o.redoSid){try{var sv=JSON.parse(localStorage.getItem(persistKey)||'null');if(sv&&sv.answers&&Object.keys(sv.answers).length){initialState=sv;resumed=true;}}catch(e){}}
+  var sessionId='s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  mountQuiz({
+    root:view,questions:questions,redoInfo:redoInfo,persistKey:persistKey,initialState:initialState,resumed:resumed,
+    onExit:function(){navigate('/');},
+    onSubmit:function(res){
+      saveSession(exam.id,sessionId,{sessionId:sessionId,examId:exam.id,title:exam.title+(o.redoSid?' · 错题重做':''),finishedAt:res.finishedAt,answers:res.answers,correct:res.correct,total:res.total,score:res.score,redoFrom:o.redoSid||null});
+      navigate('/result/'+encodeURIComponent(exam.id)+'/'+encodeURIComponent(sessionId));
+    }
+  });
+}
+
+/* ===== Result ===== */
+async function renderResult(view,examId,sessionId){
+  var session=getSession(examId,sessionId);
+  if(!session){view.innerHTML='<div class="empty"><div class="ico">🗂</div>没找到这次答卷记录<br/><button class="btn" onclick="navigate(\'/\')">回首页</button></div>';return;}
+  var manifest=await loadManifest();
+  var meta=manifest.exams.find(function(e){return e.id===examId;});
+  if(!meta)throw new Error('找不到套题：'+examId);
+  var exam=await loadExam(meta);
+  var scope=exam.questions;
+  if(session.redoFrom){
+    var prev=getSession(exam.id,session.redoFrom);
+    if(prev)scope=exam.questions.filter(function(q){return !gradeQuestion(q,prev.answers[q.id]).correct;});
+  }
+  var wrong=(session.total||scope.length)-(session.correct||0);
+  var actions=[
+    {label:'重新练习',kind:'ghost',onClick:function(){navigate('/exam/'+encodeURIComponent(examId));}}
+  ];
+  if(wrong>0)actions.push({label:'重做错题 ('+wrong+')',kind:'warn',onClick:function(){navigate('/exam/'+encodeURIComponent(examId)+'?redo='+encodeURIComponent(sessionId));}});
+  actions.push({label:'下载离线版',kind:'subtle',onClick:function(){downloadOffline(meta);}});
+  actions.push({label:'返回列表',kind:'ghost',onClick:function(){navigate('/');}});
+  renderResultView({
+    root:view,scopeQuestions:scope,allQuestions:exam.questions,answers:session.answers,
+    score:session.score,correct:session.correct,total:session.total,
+    subtitle:session.title,
+    redoLabel:session.redoFrom?'错题重做结果（基于原卷 …'+esc(session.redoFrom.slice(-6))+'）':'',
+    actions:actions
+  });
+}
+
+/* ===== Offline export ===== */
+async function downloadOffline(metaOrEx){
+  try{
+    var meta=metaOrEx.file?metaOrEx:(await loadManifest()).exams.find(function(e){return e.id===metaOrEx.id;});
+    var exam=await loadExam(meta);
+    var html=buildOfflineHTML(exam);
+    var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=(meta.title||meta.id).replace(/[\\/:*?"<>|]/g,'_')+'.html';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);
+    toast('已下载离线版');
+  }catch(e){toast('下载失败：'+e.message);}
+}
+
+function buildOfflineHTML(exam){
+  var css=$('#app-css').textContent;
+  var engine=$('#engine-js').textContent.replace(/<\/script/gi,'<\\/script');
+  var dataJSON=JSON.stringify(exam).replace(/<\/script/gi,'<\\/script');
+  var boot=[
+    "var EXAM=__DATA__;",
+    "var PKEY='exam-offline-progress:'+EXAM.id;",
+    "applyTheme();",
+    "var tb=document.getElementById('theme-btn');function sb(){tb.textContent=themeGlyph();}sb();tb.onclick=function(){toggleTheme();sb();};",
+    "matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getThemePref()==='auto'){applyTheme();sb();}});",
+    "window.__toast=function(m,ms){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.__toast._t);window.__toast._t=setTimeout(function(){t.classList.remove('show');},ms||1800);};",
+    "var view=document.getElementById('view');",
+    "function startQuiz(qs,redoInfo){",
+    "  var init=null,resumed=false;",
+    "  if(!redoInfo){try{var sv=JSON.parse(localStorage.getItem(PKEY)||'null');if(sv&&sv.answers&&Object.keys(sv.answers).length){init=sv;resumed=true;}}catch(e){}}",
+    "  mountQuiz({root:view,questions:qs,redoInfo:redoInfo,persistKey:redoInfo?null:PKEY,initialState:init,resumed:resumed,",
+    "    onExit:function(){if(confirm('退出当前练习？进度已自动保存。'))location.reload();},",
+    "    onSubmit:function(res){showResult(qs,res);}});",
+    "}",
+    "function showResult(qs,res){",
+    "  var wrong=qs.filter(function(q){return !gradeQuestion(q,res.answers[q.id]).correct;});",
+    "  var actions=[{label:'重新练习',kind:'ghost',onClick:function(){try{localStorage.removeItem(PKEY);}catch(e){}startQuiz(EXAM.questions,null);}}];",
+    "  if(wrong.length)actions.push({label:'重做错题 ('+wrong.length+')',kind:'warn',onClick:function(){startQuiz(wrong,{original:EXAM.questions.length});}});",
+    "  renderResultView({root:view,scopeQuestions:qs,allQuestions:EXAM.questions,answers:res.answers,score:res.score,correct:res.correct,total:res.total,subtitle:EXAM.title+' · 离线版',actions:actions});",
+    "  window.scrollTo(0,0);",
+    "}",
+    "startQuiz(EXAM.questions,null);"
+  ].join('\n').replace('__DATA__',dataJSON);
+
+  return '<!doctype html>\n<html lang="zh-CN" data-theme="light">\n<head>\n<meta charset="utf-8"/>\n'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"/>\n'+
+    '<title>'+esc(exam.title)+' · 离线版</title>\n'+
+    '<script>(function(){try{var p=localStorage.getItem("exam-practice:theme");var d=(p==="light"||p==="dark")?p:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();<\/script>\n'+
+    '<style>'+css+'</style>\n</head>\n<body>\n'+
+    '<header class="app-header"><div class="app-header-in"><div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2l1.8 1.8 3-3.2"></path><path d="M3.5 15.2l1.8 1.8 3-3.2"></path><line x1="12.5" y1="6.5" x2="20.5" y2="6.5"></line><line x1="12.5" y1="15.5" x2="20.5" y2="15.5"></line></svg></div><span class="brand-name">'+esc(exam.title)+'</span></div><div class="header-right"><span class="header-meta">离线版</span><button class="icon-btn" id="theme-btn" aria-label="切换主题">☀</button></div></div></header>\n'+
+    '<main class="container"><div id="view"></div></main>\n<div class="toast" id="toast"></div>\n'+
+    '<script>'+engine+'<\/script>\n'+
+    '<script>'+boot+'<\/script>\n</body>\n</html>';
 }
 </script>
 </body>
