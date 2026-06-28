@@ -303,6 +303,116 @@
     z-index: 1000;
   }
   .toast.show { opacity: 1; }
+
+  /* ===== 模式 toggle / 反馈区 / 错题重做 ===== */
+  .mode-toggle {
+    display: inline-flex;
+    background: var(--c-surface-2);
+    border-radius: 999px;
+    padding: 3px;
+    font-size: 13px;
+  }
+  .mode-toggle button {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--c-text-2);
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .mode-toggle button.active {
+    background: var(--c-primary);
+    color: white;
+  }
+  .mode-toggle button:hover:not(.active) { background: rgba(74,125,255,.08); color: var(--c-text); }
+
+  .feedback {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .feedback.correct {
+    background: rgba(62,193,119,.10);
+    border: 1px solid rgba(62,193,119,.35);
+    color: var(--c-text);
+  }
+  .feedback.wrong {
+    background: rgba(225,92,92,.08);
+    border: 1px solid rgba(225,92,92,.35);
+    color: var(--c-text);
+  }
+  .feedback.revealed {
+    background: rgba(245,183,64,.10);
+    border: 1px solid rgba(245,183,64,.35);
+    color: var(--c-text);
+  }
+  .feedback-title { font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .feedback-line { font-size: 13px; margin: 4px 0; color: var(--c-text-2); }
+  .feedback-line b { color: var(--c-text); }
+  .feedback .explain {
+    margin-top: 8px; padding: 8px 10px;
+    background: rgba(255,255,255,.4);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .feedback .explain { background: rgba(0,0,0,.25); }
+  }
+  .option.locked { pointer-events: none; opacity: .85; }
+  .option.correct-opt { background: rgba(62,193,119,.15); border-color: var(--c-success); }
+  .option.wrong-opt { background: rgba(225,92,92,.10); border-color: var(--c-danger); }
+  .blank-input.locked { background: var(--c-surface-2); pointer-events: none; }
+  .blank-input.correct-blank { border-color: var(--c-success); background: rgba(62,193,119,.10); }
+  .blank-input.wrong-blank { border-color: var(--c-danger); background: rgba(225,92,92,.08); }
+
+  /* 结果页统计卡 */
+  .stats-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .stat-item {
+    background: var(--c-surface-2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-item .stat-label { font-size: 12px; color: var(--c-text-3); margin-bottom: 4px; }
+  .stat-item .stat-num { font-size: 22px; font-weight: 700; color: var(--c-text); }
+  .stat-item .stat-pct { font-size: 12px; color: var(--c-text-2); margin-top: 2px; }
+  .stat-item.good .stat-num { color: var(--c-success); }
+  .stat-item.bad .stat-num { color: var(--c-danger); }
+
+  .redo-banner {
+    background: linear-gradient(135deg, var(--c-warning), #f5c060);
+    color: #1a1d29;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* 错题高亮链接 */
+  .btn-warn {
+    background: var(--c-warning);
+    color: #1a1d29;
+  }
+  .btn-warn:hover { background: #e0a536; }
 </style>
 </head>
 <body>
@@ -463,13 +573,21 @@ async function render() {
     if (route === '/' || route === '') {
       await renderHome(view);
     } else if (route.startsWith('/exam/')) {
-      const id = decodeURIComponent(route.slice('/exam/'.length));
-      await renderExam(view, id);
+      const rest = route.slice('/exam/'.length);
+      const [pathPart, queryPart] = rest.split('?');
+      const id = decodeURIComponent(pathPart);
+      const params = new URLSearchParams(queryPart || '');
+      const redoSid = params.get('redo') || null;
+      await renderExam(view, id, { redoSid });
     } else if (route.startsWith('/result/')) {
-      const parts = route.slice('/result/'.length).split('/');
+      const rest = route.slice('/result/'.length);
+      const [pathPart, queryPart] = rest.split('?');
+      const parts = pathPart.split('/');
       const id = decodeURIComponent(parts[0]);
       const sid = decodeURIComponent(parts[1] || '');
-      await renderResult(view, id, sid);
+      const params = new URLSearchParams(queryPart || '');
+      const redoSid = params.get('redo') || null;
+      await renderResult(view, id, sid, { redoSid });
     } else {
       view.innerHTML = '<div class="empty"><div class="ico">🧭</div>页面不存在，<a href="#/">回首页</a></div>';
     }
@@ -572,77 +690,186 @@ function showHistoryModal(examMeta) {
 }
 
 // ===== Exam (答题) =====
-async function renderExam(view, examId) {
+async function renderExam(view, examId, opts = {}) {
   const manifest = await loadManifest();
   const meta = manifest.exams.find(e => e.id === examId);
   if (!meta) throw new Error('找不到套题: ' + examId);
   const exam = await loadExam(meta);
 
+  // 错题重做模式：只加载上次的错题
+  let questions = exam.questions;
+  let redoSourceSession = null;
+  if (opts.redoSid) {
+    const prevSession = getSession(exam.id, opts.redoSid);
+    if (!prevSession) throw new Error('找不到原始答卷记录');
+    redoSourceSession = prevSession;
+    questions = exam.questions.filter(q => {
+      const r = gradeQuestion(q, prevSession.answers[q.id]);
+      return !r.correct;
+    });
+    if (questions.length === 0) {
+      // 没有错题，跳回结果页
+      toast('这次没有错题 🎉');
+      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(opts.redoSid));
+      return;
+    }
+  }
+
   // 新建一个 session
   const sessionId = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
   const answers = {}; // qid -> userAnswer
+  const reviewed = new Set(); // qid: 本题已答完/已判过（练习模式下防重复判）
+  const revealed = new Set(); // qid: 已揭题（点击过「显示答案」）
+  let mode = 'practice'; // 'practice' | 'exam'
   let currentIdx = 0;
 
   function questionView(idx) {
-    const q = exam.questions[idx];
-    const total = exam.questions.length;
+    const q = questions[idx];
+    const total = questions.length;
     const userAns = answers[q.id];
+    const isReviewed = reviewed.has(q.id);
+    const isRevealed = revealed.has(q.id);
+    const result = isReviewed ? gradeQuestion(q, userAns) : (isRevealed ? { correct: null } : null);
 
     const typeMap = { single: '单选', multiple: '多选', blank: '填空' };
     const typeClass = q.type;
 
+    // 选项渲染：根据 reviewed/revealed 状态加锁、加正确错误样式
     let bodyHTML = '';
     if (q.type === 'single') {
       const opts = formatOptions(q);
-      bodyHTML = `<div class="options">${opts.map((o, i) => `
-        <label class="option ${userAns && userAns[0]===i ? 'selected':''}" data-idx="${i}">
-          <input type="radio" name="q_${q.id}" ${userAns && userAns[0]===i ? 'checked':''}/>
+      const correctIdx = q.answer[0];
+      const userIdx = userAns ? userAns[0] : -1;
+      bodyHTML = `<div class="options">${opts.map((o, i) => {
+        let cls = 'option';
+        if (isReviewed || isRevealed) cls += ' locked';
+        if (userAns && userIdx === i) cls += ' selected';
+        if (isReviewed && userIdx === i && userIdx !== correctIdx) cls += ' wrong-opt';
+        if (isReviewed || isRevealed) {
+          if (i === correctIdx) cls += ' correct-opt';
+        }
+        return `<label class="${cls}" data-idx="${i}">
+          <input type="radio" name="q_${q.id}" ${userAns && userIdx===i ? 'checked':''} ${isReviewed||isRevealed?'disabled':''}/>
           <span class="option-label"><span class="option-key">${o.key}.</span>${escapeHTML(o.text)}</span>
-        </label>`).join('')}</div>`;
+        </label>`;
+      }).join('')}</div>`;
     } else if (q.type === 'multiple') {
       const opts = formatOptions(q);
       const userSet = new Set(userAns || []);
-      bodyHTML = `<div class="options">${opts.map((o, i) => `
-        <label class="option ${userSet.has(i)?'selected':''}" data-idx="${i}">
-          <input type="checkbox" ${userSet.has(i)?'checked':''}/>
+      const correctSet = new Set(q.answer);
+      bodyHTML = `<div class="options">${opts.map((o, i) => {
+        let cls = 'option';
+        if (isReviewed || isRevealed) cls += ' locked';
+        if (userSet.has(i)) cls += ' selected';
+        if (isReviewed) {
+          if (userSet.has(i) && !correctSet.has(i)) cls += ' wrong-opt';
+          if (correctSet.has(i)) cls += ' correct-opt';
+        } else if (isRevealed) {
+          if (correctSet.has(i)) cls += ' correct-opt';
+        }
+        return `<label class="${cls}" data-idx="${i}">
+          <input type="checkbox" ${userSet.has(i)?'checked':''} ${isReviewed||isRevealed?'disabled':''}/>
           <span class="option-label"><span class="option-key">${o.key}.</span>${escapeHTML(o.text)}</span>
-        </label>`).join('')}</div>`;
+        </label>`;
+      }).join('')}</div>`;
     } else if (q.type === 'blank') {
       const blanks = q.blanks || [];
       const userBlanks = userAns || blanks.map(() => '');
       bodyHTML = `<div class="blank-area">
-        ${blanks.map((_, i) => `
-          <div class="blank-row">
+        ${blanks.map((_, i) => {
+          let cls = 'blank-input';
+          if (isReviewed || isRevealed) cls += ' locked';
+          if (isReviewed) {
+            const userV = normalizeBlankAnswer(userBlanks[i] || '');
+            const ok = q.blanks[i].map(normalizeBlankAnswer).includes(userV);
+            cls += ok ? ' correct-blank' : ' wrong-blank';
+          }
+          return `<div class="blank-row">
             <div class="blank-index">${i+1}</div>
-            <input class="blank-input" data-bi="${i}" value="${escapeHTML(userBlanks[i] || '')}" placeholder="空 ${i+1} 答案" />
-          </div>`).join('')}
+            <input class="${cls}" data-bi="${i}" value="${escapeHTML(userBlanks[i] || '')}" placeholder="空 ${i+1} 答案" ${isReviewed||isRevealed?'readonly':''} />
+          </div>`;
+        }).join('')}
       </div>
       <div class="blank-preview">${renderBlankQuestionHTML(q.question)}</div>`;
     }
 
+    // 反馈区
+    let feedbackHTML = '';
+    if (isReviewed && result) {
+      const correct = result.correct;
+      const optList = q.type !== 'blank' ? formatOptions(q) : null;
+      let userAnsHTML = '', correctAnsHTML = '';
+      if (q.type === 'single') {
+        userAnsHTML = userAns && userAns.length ? `${optList[userAns[0]]?.key || '?'}. ${escapeHTML(optList[userAns[0]]?.text || '')}` : '（未作答）';
+        correctAnsHTML = optList[q.answer[0]] ? `${optList[q.answer[0]].key}. ${escapeHTML(optList[q.answer[0]].text)}` : '';
+      } else if (q.type === 'multiple') {
+        userAnsHTML = (userAns && userAns.length) ? userAns.map(idx => optList[idx]?.key || '?').join('') : '（未作答）';
+        correctAnsHTML = q.answer.map(idx => `${optList[idx]?.key}. ${escapeHTML(optList[idx]?.text || '')}`).join(' / ');
+      } else if (q.type === 'blank') {
+        userAnsHTML = (userAns && userAns.length) ? userAns.map((v, i) => `空${i+1}: <b>${escapeHTML(v || '（空）')}</b>`).join('<br/>') : '（未作答）';
+        correctAnsHTML = q.blanks.map((arr, i) => `空${i+1}: <b>${arr.map(escapeHTML).join(' / ')}</b>`).join('<br/>');
+      }
+      feedbackHTML = `<div class="feedback ${correct?'correct':'wrong'}">
+        <div class="feedback-title">${correct?'✓ 答对了':'✗ 答错了'}</div>
+        <div class="feedback-line">你的答案：${userAnsHTML}</div>
+        ${!correct ? `<div class="feedback-line">正确答案：${correctAnsHTML}</div>` : ''}
+        ${q.explanation ? `<div class="explain">💡 ${escapeHTML(q.explanation)}</div>` : ''}
+      </div>`;
+    } else if (isRevealed) {
+      const optList = q.type !== 'blank' ? formatOptions(q) : null;
+      let correctAnsHTML = '';
+      if (q.type === 'single') {
+        correctAnsHTML = optList[q.answer[0]] ? `${optList[q.answer[0]].key}. ${escapeHTML(optList[q.answer[0]].text)}` : '';
+      } else if (q.type === 'multiple') {
+        correctAnsHTML = q.answer.map(idx => `${optList[idx]?.key}. ${escapeHTML(optList[idx]?.text || '')}`).join(' / ');
+      } else if (q.type === 'blank') {
+        correctAnsHTML = q.blanks.map((arr, i) => `空${i+1}: <b>${arr.map(escapeHTML).join(' / ')}</b>`).join('<br/>');
+      }
+      feedbackHTML = `<div class="feedback revealed">
+        <div class="feedback-title">👀 仅供参考</div>
+        <div class="feedback-line">参考答案：${correctAnsHTML}</div>
+        ${q.explanation ? `<div class="explain">💡 ${escapeHTML(q.explanation)}</div>` : ''}
+      </div>`;
+    }
+
+    // 已完成计数
+    const doneCount = [...new Set([...reviewed, ...revealed])].length;
+
     view.innerHTML = `
+      ${opts.redoSid ? `<div class="redo-banner">🔁 错题重做模式 · 共 ${total} 道错题（原卷 ${exam.questions.length} 题）</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div>
           <a href="#/" style="color:var(--c-text-2);font-size:13px">← 返回列表</a>
           <span style="margin-left:10px;font-weight:600">${escapeHTML(exam.title)}</span>
         </div>
-        <button class="ghost" id="btn-download">下载离线版</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="mode-toggle" role="tablist">
+            <button data-mode="practice" class="${mode==='practice'?'active':''}">练习模式</button>
+            <button data-mode="exam" class="${mode==='exam'?'active':''}">考试模式</button>
+          </div>
+          <button class="ghost" id="btn-download">下载离线版</button>
+        </div>
       </div>
-      <div class="progress-bar"><div class="progress-bar-fill" style="width:${(idx/total*100).toFixed(1)}%"></div></div>
+      <div class="progress-bar"><div class="progress-bar-fill" style="width:${((doneCount)/total*100).toFixed(1)}%"></div></div>
       <div class="progress-meta">
         <span>第 ${idx+1} / ${total} 题</span>
-        <span>${typeMap[q.type] || q.type}</span>
+        <span>已完成 ${doneCount} / ${total}</span>
       </div>
       <div class="question-card">
         <div class="question-type ${typeClass}">${typeMap[q.type] || q.type}</div>
         <div class="question-text">${q.type === 'blank' ? renderBlankQuestionHTML(q.question) : escapeHTML(q.question)}</div>
         ${bodyHTML}
+        ${feedbackHTML}
       </div>
       <div class="quiz-actions">
-        <div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="ghost" id="btn-prev" ${idx===0?'disabled':''}>← 上一题</button>
+          <button class="ghost" id="btn-reveal" ${isRevealed||isReviewed?'disabled':''}>显示答案</button>
         </div>
-        <div class="right">
+        <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">
+          ${mode==='practice' && !isReviewed
+            ? `<button id="btn-finish" style="background:var(--c-warning);color:#1a1d29">完成本题 ✓</button>`
+            : ''}
           ${idx < total-1
             ? `<button id="btn-next">下一题 →</button>`
             : `<button id="btn-submit" style="background:var(--c-success)">提交答卷</button>`}
@@ -651,29 +878,47 @@ async function renderExam(view, examId) {
     `;
 
     // 绑定
-    $('#btn-prev', view)?.addEventListener('click', () => { collectAnswer(q); currentIdx = Math.max(0, currentIdx-1); questionView(currentIdx); });
-    $('#btn-next', view)?.addEventListener('click', () => { collectAnswer(q); currentIdx = Math.min(total-1, currentIdx+1); questionView(currentIdx); });
-    $('#btn-submit', view)?.addEventListener('click', () => {
-      collectAnswer(q);
-      submitExam();
+    $('#btn-prev', view)?.addEventListener('click', () => { currentIdx = Math.max(0, currentIdx-1); questionView(currentIdx); });
+    $('#btn-next', view)?.addEventListener('click', () => { currentIdx = Math.min(total-1, currentIdx+1); questionView(currentIdx); });
+    $('#btn-submit', view)?.addEventListener('click', () => { submitExam(); });
+    $('#btn-download', view)?.addEventListener('click', async () => { const m2 = await loadManifest(); const meta2 = m2.exams.find(e => e.id === examId); downloadOffline(meta2); });
+    $('#btn-reveal', view)?.addEventListener('click', () => {
+      revealed.add(q.id);
+      questionView(currentIdx);
     });
-    $('#btn-download', view)?.addEventListener('click', async () => {
-      const m2 = await loadManifest();
-      const meta2 = m2.exams.find(e => e.id === examId);
-      downloadOffline(meta2);
+    $$('[data-mode]', view).forEach(btn => {
+      btn.addEventListener('click', () => {
+        mode = btn.dataset.mode;
+        questionView(currentIdx);
+      });
     });
+    const finishBtn = $('#btn-finish', view);
+    if (finishBtn) {
+      finishBtn.addEventListener('click', () => {
+        if (answers[q.id] === undefined) {
+          toast('请先作答');
+          return;
+        }
+        reviewed.add(q.id);
+        questionView(currentIdx);
+      });
+    }
 
-    // 选项绑定
-    if (q.type === 'single') {
+    // 选项绑定（锁定状态下不绑事件）
+    if (q.type === 'single' && !isReviewed && !isRevealed) {
       $$('.option', view).forEach(opt => {
         opt.addEventListener('click', () => {
           const idx = +opt.dataset.idx;
           answers[q.id] = [idx];
           $$('.option', view).forEach(o => o.classList.toggle('selected', +o.dataset.idx === idx));
           $$('input[type=radio]', view).forEach((r, i) => r.checked = i === idx);
+          if (mode === 'practice') {
+            // 练习模式：选中后自动判（但用户也可以改）
+            // 这里不立即判，需要点「完成本题」才判
+          }
         });
       });
-    } else if (q.type === 'multiple') {
+    } else if (q.type === 'multiple' && !isReviewed && !isRevealed) {
       $$('.option', view).forEach(opt => {
         opt.addEventListener('click', () => {
           const idx = +opt.dataset.idx;
@@ -684,7 +929,7 @@ async function renderExam(view, examId) {
           opt.querySelector('input').checked = cur.has(idx);
         });
       });
-    } else if (q.type === 'blank') {
+    } else if (q.type === 'blank' && !isReviewed && !isRevealed) {
       $$('.blank-input', view).forEach(inp => {
         inp.addEventListener('input', () => {
           const bi = +inp.dataset.bi;
@@ -696,37 +941,39 @@ async function renderExam(view, examId) {
     }
   }
 
-  function collectAnswer(q) {
-    // 已在事件中实时更新，这里无操作（保留以便未来扩展）
-  }
-
   function submitExam() {
-    // 计算分数
+    // 计算分数（错题重做时只统计本次重做的题）
     let correct = 0;
-    exam.questions.forEach(q => {
+    questions.forEach(q => {
       const r = gradeQuestion(q, answers[q.id]);
       if (r.correct) correct++;
     });
-    const score = exam.questions.length ? Math.round(correct / exam.questions.length * 100) : 0;
+    const score = questions.length ? Math.round(correct / questions.length * 100) : 0;
     const sessionData = {
       sessionId,
       examId: exam.id,
-      title: exam.title,
+      title: exam.title + (opts.redoSid ? ' · 错题重做' : ''),
       finishedAt: Date.now(),
       answers,
       correct,
-      total: exam.questions.length,
+      total: questions.length,
       score,
+      redoFrom: opts.redoSid || null,
     };
     saveSession(exam.id, sessionId, sessionData);
-    navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(sessionId));
+    // 错题重做完成后跳转到重做后的结果页（同页）
+    if (opts.redoSid) {
+      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(sessionId));
+    } else {
+      navigate('/result/' + encodeURIComponent(exam.id) + '/' + encodeURIComponent(sessionId));
+    }
   }
 
   questionView(0);
 }
 
 // ===== Result =====
-async function renderResult(view, examId, sessionId) {
+async function renderResult(view, examId, sessionId, opts = {}) {
   const session = getSession(examId, sessionId);
   if (!session) {
     view.innerHTML = `<div class="empty"><div class="ico">🕳️</div>没找到这次答卷记录。<br/><a href="#/">回首页</a></div>`;
@@ -737,7 +984,27 @@ async function renderResult(view, examId, sessionId) {
   if (!meta) throw new Error('找不到套题: ' + examId);
   const exam = await loadExam(meta);
 
-  const questionsHTML = exam.questions.map((q, i) => {
+  // 按题型分类统计（错题重做的 session 只统计 questions 中存在的题）
+  const scopeQuestions = session.redoFrom
+    ? exam.questions.filter(q => {
+        const prev = getSession(exam.id, session.redoFrom);
+        if (!prev) return true;
+        return !gradeQuestion(q, prev.answers[q.id]).correct;
+      })
+    : exam.questions;
+  const typeStats = { single: { total:0, correct:0 }, multiple: { total:0, correct:0 }, blank: { total:0, correct:0 } };
+  scopeQuestions.forEach(q => {
+    const stat = typeStats[q.type];
+    if (!stat) return;
+    stat.total++;
+    const r = gradeQuestion(q, session.answers[q.id]);
+    if (r.correct) stat.correct++;
+  });
+  const typeLabel = { single:'单选', multiple:'多选', blank:'填空' };
+  const wrongTotal = (session.total || scopeQuestions.length) - (session.correct || 0);
+
+  const questionsHTML = scopeQuestions.map((q) => {
+    const originalIdx = exam.questions.indexOf(q);
     const userAns = session.answers[q.id];
     const r = gradeQuestion(q, userAns);
     const isCorrect = r.correct;
@@ -760,7 +1027,7 @@ async function renderResult(view, examId, sessionId) {
 
     return `<div class="result-question ${isCorrect ? 'correct':'wrong'}">
       <div class="head">
-        <div><b>第 ${i+1} 题</b> · <span style="color:var(--c-text-3);font-size:13px">${({single:'单选',multiple:'多选',blank:'填空'})[q.type]}</span></div>
+        <div><b>第 ${originalIdx+1} 题</b> · <span style="color:var(--c-text-3);font-size:13px">${({single:'单选',multiple:'多选',blank:'填空'})[q.type]}</span></div>
         <div class="badge ${isCorrect ? 'correct':'wrong'}">${status}</div>
       </div>
       <div class="qtext">${q.type==='blank' ? renderBlankQuestionHTML(q.question) : escapeHTML(q.question)}</div>
@@ -770,11 +1037,26 @@ async function renderResult(view, examId, sessionId) {
     </div>`;
   }).join('');
 
+  const typeStatsHTML = ['single','multiple','blank']
+    .filter(t => typeStats[t].total > 0)
+    .map(t => {
+      const s = typeStats[t];
+      const pct = Math.round(s.correct / s.total * 100);
+      const klass = pct >= 80 ? 'good' : (pct < 60 ? 'bad' : '');
+      return `<div class="stat-item ${klass}">
+        <div class="stat-label">${typeLabel[t]}正确率</div>
+        <div class="stat-num">${s.correct}/${s.total}</div>
+        <div class="stat-pct">${pct}%</div>
+      </div>`;
+    }).join('');
+
   view.innerHTML = `
+    ${session.redoFrom ? `<div class="redo-banner">🔁 错题重做结果（基于原卷 ID: ${escapeHTML(session.redoFrom.slice(-6))}）</div>` : ''}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <a href="#/" style="color:var(--c-text-2);font-size:13px">← 返回列表</a>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="ghost" id="btn-redo">重新练习</button>
+        ${wrongTotal > 0 ? `<button class="btn-warn" id="btn-redo-wrong">重做错题 (${wrongTotal})</button>` : ''}
         <button class="ghost" id="btn-download">下载离线版</button>
       </div>
     </div>
@@ -782,9 +1064,14 @@ async function renderResult(view, examId, sessionId) {
       <div class="score-num">${session.score}%</div>
       <div class="score-sub">答对 ${session.correct} / ${session.total} 题 · ${escapeHTML(session.title)}</div>
     </div>
+    <div class="stats-card">
+      <div style="font-weight:600">分题型统计</div>
+      <div class="stats-row">${typeStatsHTML}</div>
+    </div>
     <div id="qlist">${questionsHTML}</div>
   `;
   $('#btn-redo', view).addEventListener('click', () => navigate('/exam/' + encodeURIComponent(examId)));
+  $('#btn-redo-wrong', view)?.addEventListener('click', () => navigate('/exam/' + encodeURIComponent(examId) + '?redo=' + encodeURIComponent(sessionId)));
   $('#btn-download', view).addEventListener('click', () => downloadOffline(meta));
 }
 
@@ -862,6 +1149,33 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .result-question .line{font-size:13px;color:var(--c-text-2);margin:4px 0}
 .result-question .line b{color:var(--c-text)}
 .result-question .explain{margin-top:8px;padding:10px 12px;background:var(--c-surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--c-text-2)}
+.mode-toggle{display:inline-flex;background:var(--c-surface-2);border-radius:999px;padding:3px;font-size:13px;margin-bottom:10px}
+.mode-toggle button{padding:6px 14px;border-radius:999px;background:transparent;color:var(--c-text-2);font-weight:500;font-size:13px;margin:0}
+.mode-toggle button.active{background:var(--c-primary);color:#fff}
+.feedback{margin-top:16px;padding:14px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6}
+.feedback.correct{background:rgba(62,193,119,.10);border:1px solid rgba(62,193,119,.35)}
+.feedback.wrong{background:rgba(225,92,92,.08);border:1px solid rgba(225,92,92,.35)}
+.feedback.revealed{background:rgba(245,183,64,.10);border:1px solid rgba(245,183,64,.35)}
+.feedback-title{font-weight:600;margin-bottom:6px}
+.feedback-line{font-size:13px;margin:4px 0;color:var(--c-text-2)}
+.feedback-line b{color:var(--c-text)}
+.feedback .explain{margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.4);border-radius:var(--radius-sm);font-size:13px}
+.option.locked{pointer-events:none;opacity:.85}
+.option.correct-opt{background:rgba(62,193,119,.15);border-color:var(--c-success)}
+.option.wrong-opt{background:rgba(225,92,92,.10);border-color:var(--c-danger)}
+.blank-input.locked{background:var(--c-surface-2);pointer-events:none}
+.blank-input.correct-blank{border-color:var(--c-success);background:rgba(62,193,119,.10)}
+.blank-input.wrong-blank{border-color:var(--c-danger);background:rgba(225,92,92,.08)}
+.stats-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:18px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:14px}
+.stat-item{background:var(--c-surface-2);border-radius:var(--radius-sm);padding:12px 14px;text-align:center}
+.stat-item .stat-label{font-size:12px;color:var(--c-text-3);margin-bottom:4px}
+.stat-item .stat-num{font-size:22px;font-weight:700;color:var(--c-text)}
+.stat-item .stat-pct{font-size:12px;color:var(--c-text-2);margin-top:2px}
+.stat-item.good .stat-num{color:var(--c-success)}
+.stat-item.bad .stat-num{color:var(--c-danger)}
+.btn-warn{background:#f5b740!important;color:#1a1d29!important}
+.btn-warn:hover{background:#e0a536!important}
 </style>
 </head>
 <body>
@@ -888,48 +1202,106 @@ function fmtOpts(q){const L=['A','B','C','D','E','F','G','H','I','J'];return (q.
 function loadSession(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch{return null}}
 function saveSession(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
 
-const state={answers:{},idx:0};
+const state={answers:{},idx:0,reviewed:{},revealed:{},mode:'practice'};
 
 function showQuestion(){
   const q=EXAM.questions[state.idx];
   const total=EXAM.questions.length;
   const ua=state.answers[q.id];
+  const isRev=!!state.reviewed[q.id];
+  const isRevealed=!!state.revealed[q.id];
   const map={single:'单选',multiple:'多选',blank:'填空'};
   let body='';
   if(q.type==='single'){
     const O=fmtOpts(q);
-    body='<div class="options">'+O.map((o,i)=>\`<label class="option \${ua&&ua[0]===i?'selected':''}" data-idx="\${i}"><input type="radio" \${ua&&ua[0]===i?'checked':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`).join('')+'</div>';
+    const ci=q.answer[0],ui=ua?ua[0]:-1;
+    body='<div class="options">'+O.map((o,i)=>{
+      let cls='option';
+      if(isRev||isRevealed)cls+=' locked';
+      if(ua&&ui===i)cls+=' selected';
+      if(isRev&&ui===i&&ui!==ci)cls+=' wrong-opt';
+      if(isRev||isRevealed){if(i===ci)cls+=' correct-opt';}
+      return \`<label class="\${cls}" data-idx="\${i}"><input type="radio" \${ua&&ui===i?'checked':''} \${isRev||isRevealed?'disabled':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`;
+    }).join('')+'</div>';
   }else if(q.type==='multiple'){
-    const O=fmtOpts(q);const S=new Set(ua||[]);
-    body='<div class="options">'+O.map((o,i)=>\`<label class="option \${S.has(i)?'selected':''}" data-idx="\${i}"><input type="checkbox" \${S.has(i)?'checked':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`).join('')+'</div>';
+    const O=fmtOpts(q);const S=new Set(ua||[]);const CS=new Set(q.answer);
+    body='<div class="options">'+O.map((o,i)=>{
+      let cls='option';
+      if(isRev||isRevealed)cls+=' locked';
+      if(S.has(i))cls+=' selected';
+      if(isRev){if(S.has(i)&&!CS.has(i))cls+=' wrong-opt';if(CS.has(i))cls+=' correct-opt';}
+      else if(isRevealed){if(CS.has(i))cls+=' correct-opt';}
+      return \`<label class="\${cls}" data-idx="\${i}"><input type="checkbox" \${S.has(i)?'checked':''} \${isRev||isRevealed?'disabled':''}/><span class="option-label"><span class="option-key">\${o.key}.</span>\${esc(o.text)}</span></label>\`;
+    }).join('')+'</div>';
   }else if(q.type==='blank'){
     const ub=ua||(q.blanks||[]).map(()=>'');
-    body='<div class="blank-area">'+q.blanks.map((_,i)=>\`<div class="blank-row"><div class="blank-index">\${i+1}</div><input class="blank-input" data-bi="\${i}" value="\${esc(ub[i]||'')}" placeholder="空 \${i+1} 答案"/></div>\`).join('')+'</div><div class="blank-preview">'+renderBlankHTML(q.question)+'</div>';
+    body='<div class="blank-area">'+q.blanks.map((_,i)=>{
+      let cls='blank-input';
+      if(isRev||isRevealed)cls+=' locked';
+      if(isRev){const u=(ub[i]||'').trim().toLowerCase();const ok=q.blanks[i].map(s=>s.trim().toLowerCase()).includes(u);cls+=ok?' correct-blank':' wrong-blank';}
+      return \`<div class="blank-row"><div class="blank-index">\${i+1}</div><input class="\${cls}" data-bi="\${i}" value="\${esc(ub[i]||'')}" placeholder="空 \${i+1} 答案" \${isRev||isRevealed?'readonly':''}/></div>\`;
+    }).join('')+'</div><div class="blank-preview">'+renderBlankHTML(q.question)+'</div>';
   }
+  let fb='';
+  if(isRev){
+    const r=gradeQuestion(q,ua);const ok=r.correct;
+    let uH='',cH='';
+    if(q.type==='single'){const O=fmtOpts(q);uH=ua&&ua.length?\`\${O[ua[0]]?.key}. \${esc(O[ua[0]]?.text||'')}\`:'（未作答）';cH=\`\${O[q.answer[0]]?.key}. \${esc(O[q.answer[0]]?.text||'')}\`;}
+    else if(q.type==='multiple'){const O=fmtOpts(q);uH=(ua&&ua.length)?ua.map(idx=>O[idx]?.key).join(''):'（未作答）';cH=q.answer.map(idx=>\`<b>\${O[idx]?.key}</b>. \${esc(O[idx]?.text||'')}\`).join(' / ');}
+    else if(q.type==='blank'){uH=(ua&&ua.length)?ua.map((v,i)=>\`空\${i+1}: <b>\${esc(v||'（空）')}</b>\`).join('<br/>'):'（未作答）';cH=q.blanks.map((arr,i)=>\`空\${i+1}: <b>\${arr.map(esc).join(' / ')}</b>\`).join('<br/>');}
+    fb=\`<div class="feedback \${ok?'correct':'wrong'}">
+      <div class="feedback-title">\${ok?'✓ 答对了':'✗ 答错了'}</div>
+      <div class="feedback-line">你的答案：\${uH}</div>
+      \${!ok?'<div class="feedback-line">正确答案：'+cH+'</div>':''}
+      \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
+    </div>\`;
+  }else if(isRevealed){
+    let cH='';
+    if(q.type==='single'){const O=fmtOpts(q);cH=\`\${O[q.answer[0]]?.key}. \${esc(O[q.answer[0]]?.text||'')}\`;}
+    else if(q.type==='multiple'){const O=fmtOpts(q);cH=q.answer.map(idx=>\`<b>\${O[idx]?.key}</b>. \${esc(O[idx]?.text||'')}\`).join(' / ');}
+    else if(q.type==='blank'){cH=q.blanks.map((arr,i)=>\`空\${i+1}: <b>\${arr.map(esc).join(' / ')}</b>\`).join('<br/>');}
+    fb=\`<div class="feedback revealed">
+      <div class="feedback-title">👀 仅供参考</div>
+      <div class="feedback-line">参考答案：\${cH}</div>
+      \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
+    </div>\`;
+  }
+  const done=Object.keys(state.reviewed).length+Object.keys(state.revealed).length;
   \$('#view').innerHTML=\`
-    <div class="progress-bar"><div class="progress-bar-fill" style="width:\${(state.idx/total*100).toFixed(1)}%"></div></div>
-    <div class="progress-meta"><span>第 \${state.idx+1} / \${total} 题</span><span>\${map[q.type]||q.type}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="mode-toggle"><button data-mode="practice" class="\${state.mode==='practice'?'active':''}">练习模式</button><button data-mode="exam" class="\${state.mode==='exam'?'active':''}">考试模式</button></div>
+      <div style="color:var(--c-text-3);font-size:12px">离线版 · 数据存在本地</div>
+    </div>
+    <div class="progress-bar"><div class="progress-bar-fill" style="width:\${(done/total*100).toFixed(1)}%"></div></div>
+    <div class="progress-meta"><span>第 \${state.idx+1} / \${total} 题</span><span>已完成 \${done} / \${total}</span></div>
     <div class="question-card">
       <div class="question-type \${q.type}">\${map[q.type]||q.type}</div>
       <div class="question-text">\${q.type==='blank'?renderBlankHTML(q.question):esc(q.question)}</div>
       \${body}
+      \${fb}
     </div>
     <div class="quiz-actions">
-      <div><button class="ghost" id="btn-prev" \${state.idx===0?'disabled':''}>← 上一题</button></div>
-      <div class="right">\${state.idx<total-1?'<button id="btn-next">下一题 →</button>':'<button id="btn-submit" style="background:var(--c-success)">提交答卷</button>'}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="btn-prev" \${state.idx===0?'disabled':''}>← 上一题</button><button class="ghost" id="btn-reveal" \${isRevealed||isRev?'disabled':''}>显示答案</button></div>
+      <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">
+        \${state.mode==='practice'&&!isRev?'<button id="btn-finish" style="background:#f5b740;color:#1a1d29">完成本题 ✓</button>':''}
+        \${state.idx<total-1?'<button id="btn-next">下一题 →</button>':'<button id="btn-submit" style="background:var(--c-success)">提交答卷</button>'}
+      </div>
     </div>\`;
-  \$('#btn-prev').onclick=()=>{collectAnswer(q);state.idx=Math.max(0,state.idx-1);showQuestion()};
-  \$('#btn-next').onclick=()=>{collectAnswer(q);state.idx=Math.min(total-1,state.idx+1);showQuestion()};
-  \$('#btn-submit').onclick=()=>{collectAnswer(q);submit()};
-  if(q.type==='single'){
+  \$('#btn-prev')?.addEventListener('click',()=>{state.idx=Math.max(0,state.idx-1);showQuestion()});
+  \$('#btn-next')?.addEventListener('click',()=>{state.idx=Math.min(total-1,state.idx+1);showQuestion()});
+  \$('#btn-submit')?.addEventListener('click',()=>{submit()});
+  \$('#btn-reveal')?.addEventListener('click',()=>{state.revealed[q.id]=true;showQuestion()});
+  \$\$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;showQuestion()});
+  const fb2=\$('#btn-finish');
+  if(fb2){fb2.onclick=()=>{if(state.answers[q.id]===undefined){alert('请先作答');return;}state.reviewed[q.id]=true;showQuestion();};}
+  if(q.type==='single'&&!isRev&&!isRevealed){
     \$\$('.option').forEach(opt=>opt.onclick=()=>{const i=+opt.dataset.idx;state.answers[q.id]=[i];\$\$('.option').forEach(o=>o.classList.toggle('selected',+o.dataset.idx===i));});
-  }else if(q.type==='multiple'){
+  }else if(q.type==='multiple'&&!isRev&&!isRevealed){
     \$\$('.option').forEach(opt=>opt.onclick=()=>{const i=+opt.dataset.idx;const cur=new Set(state.answers[q.id]||[]);cur.has(i)?cur.delete(i):cur.add(i);state.answers[q.id]=[...cur].sort((a,b)=>a-b);opt.classList.toggle('selected',cur.has(i));});
-  }else if(q.type==='blank'){
+  }else if(q.type==='blank'&&!isRev&&!isRevealed){
     \$\$('.blank-input').forEach(inp=>inp.oninput=()=>{const bi=+inp.dataset.bi;const cur=state.answers[q.id]||(q.blanks||[]).map(()=>'');cur[bi]=inp.value;state.answers[q.id]=cur;});
   }
 }
-function collectAnswer(){}
 function submit(){
   let c=0;EXAM.questions.forEach(q=>{if(gradeQuestion(q,state.answers[q.id]).correct)c++});
   const s=EXAM.questions.length?Math.round(c/EXAM.questions.length*100):0;
@@ -953,21 +1325,27 @@ function showResult(sess){
       \${q.explanation?'<div class="explain">💡 '+esc(q.explanation)+'</div>':''}
     </div>\`;
   }).join('');
+  const ts={single:{total:0,correct:0},multiple:{total:0,correct:0},blank:{total:0,correct:0}};
+  EXAM.questions.forEach(q=>{const t=ts[q.type];if(!t)return;t.total++;if(gradeQuestion(q,sess.answers[q.id]).correct)t.correct++;});
+  const wrongTotal=sess.total-sess.correct;
+  const tl={single:'单选',multiple:'多选',blank:'填空'};
+  const statsHTML=['single','multiple','blank'].filter(t=>ts[t].total>0).map(t=>{const x=ts[t];const pct=Math.round(x.correct/x.total*100);const cls=pct>=80?'good':(pct<60?'bad':'');return \`<div class="stat-item \${cls}"><div class="stat-label">\${tl[t]}正确率</div><div class="stat-num">\${x.correct}/\${x.total}</div><div class="stat-pct">\${pct}%</div></div>\`;}).join('');
   \$('#view').innerHTML=\`
     <div style="display:flex;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div style="color:var(--c-text-3);font-size:13px">离线版 · 数据保存在本浏览器</div>
-      <button class="ghost" id="btn-redo">重新练习</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="ghost" id="btn-redo">重新练习</button></div>
     </div>
     <div class="score-card"><div class="score-num">\${sess.score}%</div><div class="score-sub">答对 \${sess.correct} / \${sess.total} 题</div></div>
+    <div class="stats-card"><div style="font-weight:600">分题型统计</div><div class="stats-row">\${statsHTML}</div></div>
     <div>\${qs}</div>
   \`;
-  \$('#btn-redo').onclick=()=>{state.answers={};state.idx=0;showQuestion()};
+  \$('#btn-redo').onclick=()=>{state.answers={};state.idx=0;state.reviewed={};state.revealed={};showQuestion()};
 }
 function init(){
   \$('#hero-title').textContent=EXAM.title;
   \$('#hero-desc').textContent=(EXAM.subject?\`科目：\${EXAM.subject} · \`:'')+(EXAM.examDate?\`考试：\${EXAM.examDate} · \`:'')+\`共 \${EXAM.questions.length} 题\`;
   const sess=loadSession();
-  if(sess&&confirm('发现上次答卷记录 (\${sess.score}%)，是否查看？\\n确定查看结果，取消重新练习。')){showResult(sess)}else{showQuestion()}
+  if(sess&&confirm('发现上次答卷记录 (\${sess.score}%)，是否查看？\\n确定查看结果，取消重新练习。')){showResult(sess)}else{state.answers={};state.idx=0;state.reviewed={};state.revealed={};showQuestion()}
 }
 init();
 <\/script>
