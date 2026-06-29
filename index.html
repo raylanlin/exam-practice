@@ -819,8 +819,8 @@ function countAllSessions(){var n=0;for(var i=0;i<localStorage.length;i++){var k
  *    - 前后端分开部署时：用 'https://你的域名或IP/api'
  *  DEMO_MODE：本地预览 / 没有后端时设 true —— 用内置演示账号登录，题库读本地 data/ 目录。
  *            部署到服务器后改为 false，走真实后端。 */
-var API_BASE = '/api';
-var DEMO_MODE = true;
+var API_BASE = 'https://47.250.40.117.sslip.io/exam-practice/api';
+var DEMO_MODE = false;
 /*  演示账号（仅 DEMO_MODE=true 的本地预览用；真实账号在后端 app.py 的 USERS 里配） */
 var DEMO_USERS = { 'student':'exam2026', 'admin':'admin2026' };
 /* ====================================================================== */
