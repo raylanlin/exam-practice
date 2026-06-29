@@ -51,21 +51,6 @@ backend/users.json    ← 账号密码
 
 ## 一、识别材料 + 提取题目（和旧版一致）
 
-### 0. 学习通 docx 快路入口
-
-如果用户给的是**学习通网页版导出的 docx**（最常见），直接用 `scripts/parse_xuexitong_docx.py`：
-
-```bash
-pip install python-docx
-python3 scripts/parse_xuexitong_docx.py <docx> <output.json> \
-  --exam-id gdufe-junshililun-2026-summer-quiz1 \
-  --title "军事理论 复习题集" \
-  --subject "军事理论" \
-  --duration 120
-```
-
-脚本已处理学习通 docx 的所有特殊格式（章节题型分组、跨段判断题、0.0 分错题、题干末尾（）等）。输出后**必须**人工核对 0.0 分的错题（脚本会提示「接下来你需要做的」）。详见 `scripts/README.md`。
-
 ### 1. 接收材料，识别来源
 
 | 形态 | 识别方式 |
@@ -74,7 +59,7 @@ python3 scripts/parse_xuexitong_docx.py <docx> <output.json> \
 | PDF | pdf 工具 |
 | 纯文本 / Markdown | 直接读 |
 | 已有 JSON / YAML | 解析后规范化 |
-| Word（.docx）| **学习通网页版导出的** → `scripts/parse_xuexitong_docx.py` 一键转换；其他来源 → 转文本 / 转 PDF 后再读 |
+| Word（.docx）| 转文本 / 转 PDF 后再读 |
 | Excel / CSV | 转表格后逐题读 |
 | 微信聊天截图 / 笔记截图 | vision 提取文字 |
 
@@ -173,14 +158,14 @@ python3 -m json.tool <id>.json > /dev/null
 # 服务器上编辑：
 cd /root/exam-practice/backend
 cat users.json
-# 形如： { "raylan": "Raylan1234", "scarlett": "Scarlett1234" }
+# 形如： { "用户名A": "密码A", "用户名B": "密码B" }   ← 占位示意，按需填
 ```
 
 - **加 / 改 / 删账号**：编辑 `users.json`（明文，设强密码），保存后**重启服务**生效：
   ```bash
   systemctl restart exam-practice   # 或你的服务名
   ```
-- 也可用环境变量替代文件：`EXAM_USERS='{"raylan":"密码"}'`（写在 systemd 的 `Environment=`）。
+- 也可用环境变量替代文件：`EXAM_USERS='{"用户名":"密码"}'`（写在 systemd 的 `Environment=`）。
 - 改了密码后，老 token 仍在有效期内可用（30 天）；要立即失效所有登录，删掉服务器上的 `backend/secret.key` 再重启（会重签密钥，所有人需重新登录）。
 - **不要**把真实密码写进 `app.py` 或提交到仓库。
 
@@ -195,7 +180,7 @@ cat users.json
 | 前端 `index.html`（UI / 功能）| `git push` → GitHub Pages 1–2 分钟生效 |
 | 后端 `app.py` | 同步到服务器 → `systemctl restart` |
 
-> 前端顶部两个配置别动错：`DEMO_MODE=false`、`API_BASE='https://47.250.40.117.sslip.io/exam-practice/api'`。
+> 前端顶部两个配置别动错：`DEMO_MODE=false`、`API_BASE='https://<你的后端地址>/exam-practice/api'`（源码用占位符 `YOUR_BACKEND_HOST`，发布到 Pages 时才替换为真实地址，**勿提交真实地址到公开仓库**）。
 > 本地预览前端时可临时把 `DEMO_MODE=true`（用内置演示账号、读本地 `data/`），但**别提交这个改动上线**。
 
 ---

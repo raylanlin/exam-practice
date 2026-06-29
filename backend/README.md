@@ -25,7 +25,7 @@
 
 | 占位符 | 含义 | 示例 |
 |---|---|---|
-| `<服务器IP>` | 你的阿里云公网 IP | `47.250.40.117` |
+| `<服务器IP>` | 你的阿里云公网 IP | `123.45.67.89` |
 | `<域名或地址>` | 后端对外 https 地址 | `https://你的域名` 或 `https://<服务器IP>.sslip.io` |
 | `<Pages地址>` | 前端 GitHub Pages 地址 | `https://你的用户名.github.io` |
 | `<账号>/<密码>` | 登录账号 | 见服务器 `users.json` |
@@ -66,16 +66,20 @@ python3 app.py
 
 ## 4. 配前端（GitHub Pages）
 
-前端 `index.html` 顶部（`后端配置` 那段）改两个值：
+前端 `index.html` 顶部（`后端配置` 那段）把占位符 `YOUR_BACKEND_HOST` 换成你的后端 https 主机：
 
 ```js
-var API_BASE = 'https://<域名或地址>/api';   // 后端的 https 地址 + /api
-var DEMO_MODE = false;                       // 关掉本地演示模式，走真实后端
+var API_BASE = 'https://<你的后端地址>/exam-practice/api';   // 把 YOUR_BACKEND_HOST 换掉
+var DEMO_MODE = false;                                       // 保持 false（预览/本地会自动走演示模式）
 ```
+
+> ⚠️ **真实后端地址不要提交到公开源码仓库**：仓库里保留 `YOUR_BACKEND_HOST` 占位符，
+> 发布到 Pages 时由部署脚本做一次替换（例如 `sed -i` 把 YOUR_BACKEND_HOST 换成真实主机）。
+> （注：Pages 是直接拿文件当网站，发布后的那份前端中的地址浏览器能看到，这是 Pages 固有特性；此处只保证公开源码仓库不含它。）
 
 > 同时在后端设 `ALLOWED_ORIGIN=<Pages地址>`（见第 5 步的 systemd `Environment`），
 > 让 CORS 只放行你的前端域名。
-> 如果改用「后端同时托管前端」（不用 Pages），则 `API_BASE='/api'` 即可（同源，无需 CORS）。
+> 如果改用「后端同时托管前端」（不用 Pages），则 `API_BASE='/api'` 即可（同源，无需 CORS，也不暴露任何地址）。
 
 ## 5. 生产常驻（systemd，推荐）
 

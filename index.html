@@ -95,6 +95,9 @@ button{font-family:inherit}
 }
 .icon-btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
 .icon-btn:active{transform:scale(.94)}
+.seg-toggle{border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;min-height:34px;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.seg-toggle:hover{border-color:var(--border-strong);color:var(--text)}
+.seg-toggle.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
 
 .container{max-width:var(--maxw);margin:0 auto;padding:22px 18px calc(40px + var(--safe-b))}
 
@@ -531,14 +534,18 @@ function themeGlyph(){return document.documentElement.getAttribute('data-theme')
 /* ---------------- Quiz engine ---------------- */
 var __quizKeyHandler=null;
 function mountQuiz(opts){
-  var root=opts.root, questions=opts.questions, total=questions.length;
+  var root=opts.root, baseQuestions=opts.questions;
+  var questions, total;
   var persistKey=opts.persistKey||null;
-  var st=Object.assign({answers:{},idx:0,mode:'practice',reviewed:{},revealed:{},flagged:{}},opts.initialState||{});
+  var st=Object.assign({answers:{},idx:0,mode:'practice',reviewed:{},revealed:{},flagged:{},shuffle:false,order:null},opts.initialState||{});
   st.navOpen=false;
+  function shuffledIndices(n){var a=[];for(var i=0;i<n;i++)a.push(i);for(var j=n-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=a[j];a[j]=a[k];a[k]=t;}return a;}
+  function applyOrder(){var n=baseQuestions.length;if(st.shuffle){if(!st.order||st.order.length!==n)st.order=shuffledIndices(n);}else{st.order=null;}questions=st.order?st.order.map(function(i){return baseQuestions[i];}):baseQuestions.slice();total=questions.length;}
+  applyOrder();
   if(st.idx>=total)st.idx=0;
   var showResume=!!opts.resumed;
 
-  function save(){if(!persistKey)return;try{localStorage.setItem(persistKey,JSON.stringify({answers:st.answers,idx:st.idx,mode:st.mode,reviewed:st.reviewed,revealed:st.revealed,flagged:st.flagged}));}catch(e){}}
+  function save(){if(!persistKey)return;try{localStorage.setItem(persistKey,JSON.stringify({answers:st.answers,idx:st.idx,mode:st.mode,reviewed:st.reviewed,revealed:st.revealed,flagged:st.flagged,shuffle:st.shuffle,order:st.order}));}catch(e){}}
   function clearSaved(){if(persistKey){try{localStorage.removeItem(persistKey);}catch(e){}}}
 
   function cellState(i){
@@ -650,7 +657,10 @@ function mountQuiz(opts){
         '<div class="quiz-top-row">'+
           '<div class="back-link" data-exit>‹ 返回</div>'+
           '<div class="seg" role="tablist"><button data-mode="practice" class="'+(st.mode==='practice'?'active':'')+'">练习</button><button data-mode="exam" class="'+(st.mode==='exam'?'active':'')+'">考试</button></div>'+
-          '<button class="icon-btn" data-open-nav title="题目导航">▦</button>'+
+          '<div style="display:flex;align-items:center;gap:8px">'+
+            '<button class="seg-toggle'+(st.shuffle?' on':'')+'" data-shuffle title="乱序题目顺序">乱序</button>'+
+            '<button class="icon-btn" data-open-nav title="题目导航">▦</button>'+
+          '</div>'+
         '</div>'+
         '<div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:'+(total?(done/total*100):0).toFixed(1)+'%"></div></div>'+
         '<div class="progress-meta"><span class="now">第 '+(st.idx+1)+' / '+total+' 题</span><span>已完成 '+done+' / '+total+'</span></div></div>'+
@@ -688,6 +698,7 @@ function mountQuiz(opts){
     qa('[data-next]')&&(qa('[data-next]').onclick=next);
     var rb=qa('[data-restart]');if(rb)rb.onclick=function(){st.answers={};st.idx=0;st.reviewed={};st.revealed={};st.flagged={};showResume=false;clearSaved();render();};
     qaa('[data-mode]').forEach(function(b){b.onclick=function(){if(b.dataset.mode===st.mode)return;st.mode=b.dataset.mode;st.reviewed={};st.revealed={};save();render();};});
+    var shb=qa('[data-shuffle]');if(shb)shb.onclick=function(){var curId=questions[st.idx]&&questions[st.idx].id;st.shuffle=!st.shuffle;st.order=null;applyOrder();var ni=curId!=null?questions.findIndex(function(qq){return qq.id===curId;}):0;st.idx=ni>=0?ni:0;save();window.__toast&&window.__toast(st.shuffle?'已乱序':'已恢复原顺序');render();};
     var fl=qa('[data-flag]');if(fl)fl.onclick=function(){if(st.flagged[q.id])delete st.flagged[q.id];else st.flagged[q.id]=true;save();render();};
     var rv=qa('[data-reveal]');if(rv)rv.onclick=function(){st.revealed[q.id]=true;save();render();};
     var rt=qa('[data-retry]');if(rt)rt.onclick=function(){delete st.reviewed[q.id];delete st.revealed[q.id];delete st.answers[q.id];save();render();};
@@ -877,6 +888,7 @@ function countAllSessions(){var n=0;for(var i=0;i<localStorage.length;i++){var k
  *    - 前后端分开部署时：用 'https://你的域名或IP/api'
  *  DEMO_MODE：本地预览 / 没有后端时设 true —— 用内置演示账号登录，题库读本地 data/ 目录。
  *            部署到服务器后改为 false，走真实后端。 */
+/*  ⚠️ 真实后端地址不要提交到公开仓库：保留占位符，发布到 Pages 时由部署脚本替换。 */
 var API_BASE = 'https://47.250.40.117.sslip.io/exam-practice/api';
 var DEMO_MODE = false;
 /*  自动判断运行模式：只有在「线上 Pages 域名」或「后端同源」时走真实后端，
