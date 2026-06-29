@@ -52,9 +52,10 @@ user-invocable: true
 
 1. **题干**（不含题号、保留原文标点和换行）
 2. **选项**（A/B/C/D...，按顺序，去掉前缀「A.」「B.」等保留字母）
-3. **题型**：`single` / `multiple` / `blank`
+3. **题型**：`single` / `multiple` / `judge` / `blank`
 4. **答案**：
    - 选择题 → 转成选项**索引**数组（**从 0 开始**）
+   - 判断题（`judge`）→ **不写 `options`**；`answer:[0]` 表示「正确」、`answer:[1]` 表示「错误」（前端自动渲染「✓ 正确 / ✕ 错误」两个单选）
    - 填空题 → `[["等价1", "等价2"], ...]`，每个空位一个数组
 5. **解析**（如有则保留；没有就**留空不写**字段）
 
@@ -91,6 +92,13 @@ user-invocable: true
     },
     {
       "id": "q5",
+      "type": "judge",
+      "question": "判断题题干（无需 options）。",
+      "answer": [0],
+      "explanation": "解析（可选）。[0]=正确，[1]=错误。"
+    },
+    {
+      "id": "q7",
       "type": "blank",
       "question": "中国首都是___，有___个直辖市。",
       "blanks": [["北京", "北京市"], ["4", "四个"]],
@@ -138,6 +146,7 @@ python3 -m json.tool data/<id>.json > /dev/null
 
 # 2. 答案索引未越界（手动或脚本）
 # 对每个选择题：max(answer) < len(options)
+# 判断题：answer 必须是 [0] 或 [1]，且不应有 options
 
 # 3. 填空 blanks 长度 = 题干中 ___ 数量
 # 用 grep 验证
@@ -172,7 +181,7 @@ GitHub Pages 通常 1–2 分钟生效。完成后**必须**访问 https://rayla
 
 ```
 ✅ 已部署：<title>
-📊 共 N 题（单选 X / 多选 Y / 填空 Z）
+📊 共 N 题（单选 X / 多选 Y / 判断 W / 填空 Z）
 ⚠️ 跳过 / 缺答案：q5, q12（用户原卷缺答案）
 🌐 https://raylanlin.github.io/exam-practice/
 ```

@@ -4,12 +4,12 @@
     {
       "id": "demo",
       "file": "demo.json",
-      "title": "考前刷题 Demo（单选/多选/填空）",
+      "title": "考前刷题 Demo（四种题型）",
       "subject": "Demo",
       "examDate": "",
       "duration": 10,
       "questionCount": 0,
-      "description": "覆盖三种题型的演示卷，方便先验证流程"
+      "description": "覆盖四种题型的演示卷（单选/多选/填空/判断），方便先验证流程"
     },
     {
       "id": "gdufe-junshililun-2026-summer-quiz1",
@@ -19,7 +19,7 @@
       "examDate": "",
       "duration": 120,
       "questionCount": 0,
-      "description": "覆盖国防基础 / 国际战略 / 军事技术与装备等章节。来源：用户的军事理论复习题。判断题已转换为「正确/错误」二选一。"
+      "description": "覆盖国防基础 / 国际战略 / 军事技术与装备等章节。来源：用户的军事理论复习题。包含判断题（√/×）。"
     }
   ]
 }

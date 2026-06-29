@@ -1,6 +1,6 @@
 {
   "id": "demo",
-  "title": "考前刷题 Demo（三种题型）",
+  "title": "考前刷题 Demo（四种题型）",
   "subject": "Demo",
   "examDate": "",
   "updatedAt": "2026-06-28",
@@ -52,6 +52,20 @@
       "question": "HTTP 状态码 404 表示___未找到，200 表示请求___。",
       "blanks": [["资源", "页面", "文件"], ["成功", "成功完成", "OK"]],
       "explanation": "404 Not Found；200 OK。"
+    },
+    {
+      "id": "q7",
+      "type": "judge",
+      "question": "HTTP 是一种无状态（stateless）协议。",
+      "answer": [0],
+      "explanation": "正确。HTTP 本身无状态，状态靠 Cookie/Session/Token 维持。"
+    },
+    {
+      "id": "q8",
+      "type": "judge",
+      "question": "在 JavaScript 中，`typeof null` 返回 'null'。",
+      "answer": [1],
+      "explanation": "错误。`typeof null` 返回 'object'，是历史遗留 bug。"
     }
   ]
 }

@@ -437,13 +437,13 @@ button{font-family:inherit}
 <script type="text/plain" id="engine-js">
 /* global helpers */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function typeName(t){return {single:'单选',multiple:'多选',blank:'填空'}[t]||t;}
+function typeName(t){return {single:'单选',multiple:'多选',blank:'填空',judge:'判断'}[t]||t;}
 function renderBlankHTML(t){var ps=String(t).split('___');var h='';ps.forEach(function(s,i){h+=esc(s);if(i<ps.length-1)h+='<b style="color:var(--primary)">['+(i+1)+']</b>';});return h;}
 function normBlank(s){return String(s==null?'':s).trim().toLowerCase();}
 function arraysEqualAsSet(a,b){if(!a||!b||a.length!==b.length)return false;var sa=a.slice().sort();var sb=b.slice().sort();return sa.every(function(v,i){return v===sb[i];});}
 function gradeQuestion(q,ua){
   if(ua===undefined||ua===null)return {correct:false,answered:false};
-  if(q.type==='single'||q.type==='multiple'){
+  if(q.type==='single'||q.type==='multiple'||q.type==='judge'){
     var ans=Array.isArray(ua)?ua:[];
     return {correct:arraysEqualAsSet(ans,q.answer),answered:ans.length>0};
   }
@@ -455,7 +455,7 @@ function gradeQuestion(q,ua){
   }
   return {correct:false,answered:false};
 }
-function fmtOpts(q){var L=['A','B','C','D','E','F','G','H','I','J'];return (q.options||[]).map(function(o,i){return {key:L[i],text:typeof o==='string'?o:(o&&o.text||'')};});}
+function fmtOpts(q){if(q.type==='judge'){return [{key:'✓',text:'正确'},{key:'✕',text:'错误'}];}var L=['A','B','C','D','E','F','G','H','I','J'];return (q.options||[]).map(function(o,i){return {key:L[i],text:typeof o==='string'?o:(o&&o.text||'')};});}
 function isAnswered(q,ua){return gradeQuestion(q,ua).answered;}
 
 /* theme */
@@ -506,7 +506,7 @@ function mountQuiz(opts){
 
   function answerBody(q,locked,revealOnly){
     var ua=st.answers[q.id];
-    if(q.type==='single'){
+    if(q.type==='single'||q.type==='judge'){
       var O=fmtOpts(q),ci=q.answer[0],ui=ua?ua[0]:-1;
       return '<div class="options">'+O.map(function(o,i){
         var cls='option';if(locked||revealOnly)cls+=' locked';
@@ -541,7 +541,7 @@ function mountQuiz(opts){
     var reviewed=st.reviewed[q.id],revealed=st.revealed[q.id];
     if(!reviewed&&!revealed)return '';
     var O=q.type!=='blank'?fmtOpts(q):null,uH='',cH='';
-    if(q.type==='single'){uH=(ua&&ua.length)?(O[ua[0]]?(O[ua[0]].key+'. '+esc(O[ua[0]].text)):'?'):'（未作答）';cH=O[q.answer[0]]?(O[q.answer[0]].key+'. '+esc(O[q.answer[0]].text)):'';}
+    if(q.type==='single'||q.type==='judge'){uH=(ua&&ua.length)?(O[ua[0]]?(O[ua[0]].key+'. '+esc(O[ua[0]].text)):'?'):'（未作答）';cH=O[q.answer[0]]?(O[q.answer[0]].key+'. '+esc(O[q.answer[0]].text)):'';}
     else if(q.type==='multiple'){uH=(ua&&ua.length)?ua.map(function(i){return O[i]?O[i].key:'?';}).join(' ')||'（未作答）':'（未作答）';cH=q.answer.map(function(i){return O[i]?(O[i].key+'. '+esc(O[i].text)):'';}).join(' / ');}
     else{uH=(ua&&ua.length)?ua.map(function(v,i){return '空'+(i+1)+': <b>'+esc(v||'（空）')+'</b>';}).join('<br/>'):'（未作答）';cH=q.blanks.map(function(a,i){return '空'+(i+1)+': <b>'+a.map(esc).join(' / ')+'</b>';}).join('<br/>');}
     if(reviewed){
@@ -638,7 +638,7 @@ function mountQuiz(opts){
     var jf=qa('[data-jump-flag]');if(jf)jf.onclick=function(){var t=questions.findIndex(function(qq){return st.flagged[qq.id];});if(t<0){window.__toast&&window.__toast('没有标记的题');return;}st.navOpen=false;go(t);};
 
     // option / blank inputs
-    if((q.type==='single'||q.type==='multiple')&&!locked&&!revealOnly){
+    if((q.type==='single'||q.type==='multiple'||q.type==='judge')&&!locked&&!revealOnly){
       qaa('.option').forEach(function(opt){
         opt.onclick=function(){selectOption(q,+opt.dataset.idx);};
       });
@@ -662,7 +662,7 @@ function mountQuiz(opts){
   }
 
   function selectOption(q,idx){
-    if(q.type==='single'){
+    if(q.type==='single'||q.type==='judge'){
       st.answers[q.id]=[idx];
     } else {
       var cur=new Set(st.answers[q.id]||[]);
@@ -701,7 +701,7 @@ function mountQuiz(opts){
     if((e.key==='r'||e.key==='R')&&st.mode==='practice'&&!st.reviewed[q.id]&&!st.revealed[q.id]){st.revealed[q.id]=true;save();render();return;}
     if(/^[1-9]$/.test(e.key)){
       var idx=+e.key-1;
-      if((q.type==='single'||q.type==='multiple')&&!st.reviewed[q.id]&&!st.revealed[q.id]&&idx<(q.options||[]).length){selectOption(q,idx);}
+      if((q.type==='single'||q.type==='multiple'||q.type==='judge')&&!st.reviewed[q.id]&&!st.revealed[q.id]&&idx<fmtOpts(q).length){selectOption(q,idx);}
       return;
     }
   };
@@ -727,7 +727,7 @@ function renderResultView(opts){
   var listHTML=qs.map(function(q){
     var no=all.indexOf(q)+1;var ua=ans[q.id];var ok=gradeQuestion(q,ua).correct;
     var O=q.type!=='blank'?fmtOpts(q):null,uH='',cH='';
-    if(q.type==='single'){uH=(ua&&ua.length)?(O[ua[0]]?O[ua[0]].key+'. '+esc(O[ua[0]].text):'?'):'（未作答）';cH=q.answer.map(function(i){return O[i]?O[i].key+'. '+esc(O[i].text):'';}).join(' / ');}
+    if(q.type==='single'||q.type==='judge'){uH=(ua&&ua.length)?(O[ua[0]]?O[ua[0]].key+'. '+esc(O[ua[0]].text):'?'):'（未作答）';cH=q.answer.map(function(i){return O[i]?O[i].key+'. '+esc(O[i].text):'';}).join(' / ');}
     else if(q.type==='multiple'){uH=(ua&&ua.length)?ua.map(function(i){return O[i]?O[i].key:'?';}).join(' '):'（未作答）';cH=q.answer.map(function(i){return O[i]?O[i].key+'. '+esc(O[i].text):'';}).join(' / ');}
     else{uH=(ua&&ua.length)?ua.map(function(v,i){return '空'+(i+1)+': <b>'+esc(v||'（空）')+'</b>';}).join('<br/>'):'（未作答）';cH=q.blanks.map(function(a,i){return '空'+(i+1)+': <b>'+a.map(esc).join(' / ')+'</b>';}).join('<br/>');}
     return '<div class="result-q '+(ok?'correct':'wrong')+'"><div class="head"><div class="qno">第 '+no+' 题<span class="ty">'+typeName(q.type)+'</span></div><div class="badge '+(ok?'correct':'wrong')+'">'+(isAnswered(q,ua)?(ok?'答对':'答错'):'未作答')+'</div></div>'+
