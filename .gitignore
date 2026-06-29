@@ -1,2 +1,14 @@
 node_modules/
 .DS_Store
+
+# ── 敏感内容：只存服务器，绝不进公开仓库 ──
+# 账号密码
+backend/users.json
+backend/secret.key
+backend/.env
+# 真实题库（只 demo 进仓库做样例/预览，其余视为私有）
+backend/banks/*.json
+!backend/banks/demo.json
+data/*.json
+!data/demo.json
+!data/manifest.json

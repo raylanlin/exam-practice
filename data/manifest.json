@@ -9,17 +9,7 @@
       "examDate": "",
       "duration": 10,
       "questionCount": 0,
-      "description": "覆盖四种题型的演示卷（单选/多选/填空/判断），方便先验证流程"
-    },
-    {
-      "id": "gdufe-junshililun-2026-summer-quiz1",
-      "file": "gdufe-junshililun-2026-summer-quiz1.json",
-      "title": "军事理论 复习题集",
-      "subject": "军事理论",
-      "examDate": "",
-      "duration": 120,
-      "questionCount": 0,
-      "description": "覆盖国防基础 / 国际战略 / 军事技术与装备等章节。来源：用户的军事理论复习题。包含判断题（√/×）。"
+      "description": "覆盖三种题型的演示卷，方便先验证流程。仅作公开预览样例，真实题库存在服务器。"
     }
   ]
 }

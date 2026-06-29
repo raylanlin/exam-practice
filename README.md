@@ -4,6 +4,18 @@ GitHub Pages 部署的考前刷题 PWA：纯前端、零依赖、单文件即可
 
 > 🎨 完整设计规范见 **[`docs/design-system.md`](docs/design-system.md)**（颜色 / 字体 / 组件 / 交互 / 响应式的唯一标准）。
 > 🤖 项目硬性约束见 **[`CLAUDE.md`](CLAUDE.md)**。
+> 🖥 后端 / 部署说明见 **[`backend/README.md`](backend/README.md)**。
+
+## 两种运行方式
+
+1. **本地预览（无后端）**：`index.html` 顶部 `DEMO_MODE = true`，用内置演示账号 `student / exam2026` 登录，题库读本地 `data/`。
+2. **服务器部署（前后端分离）**：前端 `index.html` 放 GitHub Pages（或后端同源托管），后端 `backend/app.py`（Flask + 文件夹题库 + 登录）跑在阿里云上。把 `index.html` 顶部改成 `DEMO_MODE = false`、`API_BASE`=后端 https 地址。详见 `backend/README.md`。
+
+> 登录后才能进入首页 / 答题 / 下载离线版；登录后可在「管理题库」页增删题库（写到服务器的 `banks/` 文件夹）。
+
+### 🔐 隐私与安全
+
+公开仓库里**不含任何敏感内容**：账号密码存服务器的 `backend/users.json`（已 .gitignore，代码里没有真实密码），真实题库只上传到服务器的 `backend/banks/`（已 .gitignore，仓库里只留 `demo.json` 做样例）。前端是 https，后端也必须用 https 并把 CORS 限定到你的 Pages 域名。详见 `backend/README.md` 的「隐私与安全」一节。
 
 ## 在线地址
 
@@ -137,7 +149,7 @@ exam-practice/
 
 ## 技术栈
 
-纯前端，零依赖。数据存 `data/` 的 JSON，答题记录与进度存浏览器 `localStorage`。所有样式集中在 `index.html` 的 `<style id="app-css">`（CSS 变量），答题引擎在 `<script id="engine-js">` 中，主程序与离线版共用同一份实现。
+前端零依赖单文件 `index.html`（CSS 变量 + 单份答题引擎），通过 `fetch` 调后端 API 取题库；答题记录与进度存浏览器 `localStorage`。后端 `backend/app.py` 为 Flask + 文件夹题库（一套题一个 `.json`），负责登录鉴权、题库增删、并托管前端。离线版是自包含单文件，双击即可打开。
 
 ## 本地预览
 

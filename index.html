@@ -387,6 +387,30 @@ button{font-family:inherit}
 .hist-item .sc{font-weight:700;color:var(--primary)}
 .hist-item .sc small{color:var(--text-3);font-weight:500;margin-left:5px}
 
+/* ---------- Auth + Manage ---------- */
+.header-user{font-size:13px;font-weight:600;color:var(--text-2);background:var(--surface-2);padding:5px 12px;border-radius:999px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.login-wrap{max-width:380px;margin:6vh auto 0;display:flex;flex-direction:column;gap:18px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow)}
+.login-card h2{margin:0 0 6px;font-size:22px;font-weight:750;letter-spacing:-.3px}
+.login-card .sub{margin:0 0 20px;color:var(--text-2);font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:13px;font-weight:600;color:var(--text-2)}
+.field input{border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:12px 14px;border-radius:var(--radius-sm);font-size:16px;font-family:inherit;transition:border-color .12s,box-shadow .12s}
+.field input:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.login-err{color:var(--danger);font-size:13px;min-height:18px;margin-bottom:6px;line-height:1.5}
+.login-card .btn{width:100%}
+.login-hint{color:var(--text-3);font-size:12.5px;text-align:center;line-height:1.7}
+.login-hint b{color:var(--text-2)}
+.manage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.bank-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.bank-row .info{min-width:0}
+.bank-row .nm{font-weight:650;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bank-row .mt{color:var(--text-3);font-size:12.5px;margin-top:2px}
+.add-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);margin-top:8px}
+.add-card textarea{width:100%;min-height:150px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;font-family:ui-monospace,"SF Mono",Menlo,monospace;line-height:1.6;resize:vertical}
+.add-card textarea:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
 /* ---------- Responsive ---------- */
 @media (min-width:880px){
   :root{--maxw:820px}
@@ -426,7 +450,10 @@ button{font-family:inherit}
     </div>
     <div class="header-right">
       <span class="header-meta" id="header-meta"></span>
+      <span class="header-user" id="header-user" style="display:none"></span>
+      <button class="icon-btn" id="manage-btn" title="管理题库" aria-label="管理题库" style="display:none">＋</button>
       <button class="icon-btn" id="theme-btn" title="切换深色 / 浅色" aria-label="切换主题">☀</button>
+      <button class="icon-btn" id="logout-btn" title="退出登录" aria-label="退出登录" style="display:none">⏻</button>
     </div>
   </div>
 </header>
@@ -774,6 +801,8 @@ applyTheme();syncThemeBtn();
 $('#theme-btn').onclick=function(){toggleTheme();syncThemeBtn();};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getThemePref()==='auto'){applyTheme();syncThemeBtn();}});
 $('#brand').onclick=function(){navigate('/');};
+$('#logout-btn').onclick=function(){if(confirm('退出登录？')){clearAuth();syncAuthUI();document.title='考前刷题';navigate('/');render();}};
+$('#manage-btn').onclick=function(){navigate('/manage');};
 window.addEventListener('scroll',function(){$('#app-header').classList.toggle('scrolled',window.scrollY>4);},{passive:true});
 
 /* storage */
@@ -784,9 +813,162 @@ function getSession(id,sid){return loadSessions(id)[sid];}
 function listSessions(id){return Object.values(loadSessions(id)).sort(function(a,b){return (b.finishedAt||0)-(a.finishedAt||0);});}
 function countAllSessions(){var n=0;for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('exam-practice:sessions:')===0){try{n+=Object.keys(JSON.parse(localStorage.getItem(k))).length;}catch(e){}}}return n;}
 
+/* ===================== 后端配置（部署时改这里） ===================== */
+/*  API_BASE：后端地址。
+ *    - Flask 同时托管前端时：用 '/api'（同源，免跨域）
+ *    - 前后端分开部署时：用 'https://你的域名或IP/api'
+ *  DEMO_MODE：本地预览 / 没有后端时设 true —— 用内置演示账号登录，题库读本地 data/ 目录。
+ *            部署到服务器后改为 false，走真实后端。 */
+var API_BASE = '/api';
+var DEMO_MODE = true;
+/*  演示账号（仅 DEMO_MODE=true 的本地预览用；真实账号在后端 app.py 的 USERS 里配） */
+var DEMO_USERS = { 'student':'exam2026', 'admin':'admin2026' };
+/* ====================================================================== */
+
+var TOKEN_KEY='exam-practice:token', USER_KEY='exam-practice:user';
+function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
+function getUser(){try{return localStorage.getItem(USER_KEY)||'';}catch(e){return '';}}
+function setAuth(t,u){try{localStorage.setItem(TOKEN_KEY,t);localStorage.setItem(USER_KEY,u);}catch(e){}}
+function clearAuth(){try{localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);}catch(e){}}
+function isLoggedIn(){return !!getToken();}
+function syncAuthUI(){
+  var on=isLoggedIn();
+  ['manage-btn','logout-btn'].forEach(function(id){var el=$('#'+id);if(el)el.style.display=on?'':'none';});
+  var hu=$('#header-user');if(hu){hu.style.display=on?'':'none';hu.textContent=on?getUser():'';}
+}
+
+/* ---- 本地演示模式的题库存储（DEMO_MODE 下“管理题库”的增删写这里） ---- */
+var MOCK_BANKS_KEY='exam-practice:mock-banks';
+function mockBanks(){try{return JSON.parse(localStorage.getItem(MOCK_BANKS_KEY)||'{}');}catch(e){return {};}}
+function mockSaveBank(ex){var all=mockBanks();all[ex.id]=ex;localStorage.setItem(MOCK_BANKS_KEY,JSON.stringify(all));}
+function mockDeleteBank(id){var all=mockBanks();delete all[id];localStorage.setItem(MOCK_BANKS_KEY,JSON.stringify(all));}
+function examMeta(ex){return {id:ex.id,file:ex.id+'.json',title:ex.title||ex.id,subject:ex.subject||'',examDate:ex.examDate||'',duration:ex.duration||0,description:ex.description||'',questionCount:(ex.questions||[]).length};}
+function validateBank(ex){
+  if(!ex||typeof ex!=='object'||Array.isArray(ex))throw new Error('不是合法的题库对象');
+  if(!ex.id||!/^[A-Za-z0-9_-]+$/.test(ex.id))throw new Error('缺少合法 id（只能含字母、数字、- 和 _）');
+  if(!ex.title)throw new Error('缺少 title（标题）');
+  if(!Array.isArray(ex.questions)||!ex.questions.length)throw new Error('questions 不能为空');
+  return ex;
+}
+
+/* ===================== API 层 ===================== */
+var api={
+  async login(username,password){
+    if(DEMO_MODE){
+      if(DEMO_USERS[username]&&DEMO_USERS[username]===password)return {token:'demo.'+btoa(username+':'+Date.now()),username:username};
+      throw new Error('账号或密码错误');
+    }
+    var r=await fetch(API_BASE+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:username,password:password})});
+    if(!r.ok){var e=await r.json().catch(function(){return {};});throw new Error(e.error||'登录失败');}
+    return r.json();
+  },
+  async manifest(){
+    if(DEMO_MODE){
+      var base={exams:[]};
+      try{base=await (await fetch('./data/manifest.json',{cache:'no-cache'})).json();}catch(e){}
+      var metas=await Promise.all((base.exams||[]).map(async function(m){
+        try{var full=await (await fetch('./data/'+m.file,{cache:'no-cache'})).json();return examMeta(Object.assign({},m,full));}
+        catch(e){return Object.assign({questionCount:0},m);}
+      }));
+      var custom=mockBanks(),ids={};metas.forEach(function(m){ids[m.id]=true;});
+      Object.keys(custom).forEach(function(id){var m=examMeta(custom[id]);if(ids[id]){metas=metas.map(function(x){return x.id===id?m:x;});}else{metas.push(m);ids[id]=true;}});
+      return {exams:metas};
+    }
+    return this._get('/manifest');
+  },
+  async exam(id){
+    if(DEMO_MODE){
+      var custom=mockBanks();if(custom[id])return custom[id];
+      var base={exams:[]};try{base=await (await fetch('./data/manifest.json',{cache:'no-cache'})).json();}catch(e){}
+      var meta=(base.exams||[]).find(function(e){return e.id===id;});
+      var file=meta?meta.file:(id+'.json');
+      var r=await fetch('./data/'+file,{cache:'no-cache'});if(!r.ok)throw new Error('加载套题失败');return r.json();
+    }
+    return this._get('/exam/'+encodeURIComponent(id));
+  },
+  async saveExam(ex){if(DEMO_MODE){mockSaveBank(ex);return {status:'ok'};}return this._send('POST','/exam',ex);},
+  async deleteExam(id){if(DEMO_MODE){mockDeleteBank(id);return {status:'ok'};}return this._send('DELETE','/exam/'+encodeURIComponent(id));},
+  async _get(path){return this._handle(await fetch(API_BASE+path,{headers:{'Authorization':'Bearer '+getToken()}}));},
+  async _send(method,path,body){return this._handle(await fetch(API_BASE+path,{method:method,headers:{'Authorization':'Bearer '+getToken(),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}));},
+  async _handle(r){
+    if(r.status===401){clearAuth();syncAuthUI();navigate('/');toast('登录已过期，请重新登录');throw new Error('未授权');}
+    if(!r.ok){var e=await r.json().catch(function(){return {};});throw new Error(e.error||('请求失败 ('+r.status+')'));}
+    if(r.status===204)return {status:'ok'};
+    return r.json();
+  }
+};
+
 /* data */
-async function loadManifest(){var r=await fetch('./data/manifest.json',{cache:'no-cache'});if(!r.ok)throw new Error('加载题库列表失败');return r.json();}
-async function loadExam(meta){var r=await fetch('./data/'+meta.file,{cache:'no-cache'});if(!r.ok)throw new Error('加载套题失败：'+meta.file);return r.json();}
+async function loadManifest(){return api.manifest();}
+async function loadExam(metaOrId){return api.exam(typeof metaOrId==='string'?metaOrId:metaOrId.id);}
+
+/* ===== 登录 ===== */
+function renderLogin(view){
+  document.title='登录 · 考前刷题';
+  view.innerHTML=''+
+    '<div class="login-wrap fade-in"><div class="login-card">'+
+      '<h2>考前刷题</h2><p class="sub">请登录后开始练习</p>'+
+      '<div class="field"><label for="lg-user">账号</label><input id="lg-user" type="text" autocomplete="username" enterkeyhint="next" autocapitalize="off" autocorrect="off" spellcheck="false"></div>'+
+      '<div class="field"><label for="lg-pass">密码</label><input id="lg-pass" type="password" autocomplete="current-password" enterkeyhint="go"></div>'+
+      '<div class="login-err" id="lg-err"></div>'+
+      '<button class="btn" id="lg-btn">登录</button>'+
+    '</div>'+
+    (DEMO_MODE?'<div class="login-hint">本地演示模式 · 试用账号 <b>student / exam2026</b><br/>部署到服务器后改用真实账号</div>':'')+
+    '</div>';
+  var u=$('#lg-user'),p=$('#lg-pass'),btn=$('#lg-btn'),err=$('#lg-err');
+  function submit(){doLogin(u.value.trim(),p.value,btn,err);}
+  btn.onclick=submit;
+  u.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();p.focus();}};
+  p.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();submit();}};
+  setTimeout(function(){u.focus();},50);
+}
+async function doLogin(username,password,btn,err){
+  err.textContent='';
+  if(!username||!password){err.textContent='请输入账号和密码';return;}
+  btn.disabled=true;btn.textContent='登录中…';
+  try{
+    var res=await api.login(username,password);
+    setAuth(res.token,res.username||username);
+    syncAuthUI();document.title='考前刷题';navigate('/');render();
+  }catch(e){err.textContent=e.message||'登录失败';btn.disabled=false;btn.textContent='登录';}
+}
+
+/* ===== 管理题库 ===== */
+async function renderManage(view){
+  var manifest=await loadManifest();
+  var exams=manifest.exams||[];
+  var rows=exams.map(function(ex){
+    return '<div class="bank-row" data-id="'+esc(ex.id)+'"><div class="info"><div class="nm">'+esc(ex.title||ex.id)+'</div><div class="mt">'+esc(ex.id)+' · '+(ex.questionCount||0)+' 题'+(ex.subject?' · '+esc(ex.subject):'')+'</div></div><button class="btn ghost sm" data-del="'+esc(ex.id)+'">删除</button></div>';
+  }).join('')||'<div class="empty" style="padding:30px 0">还没有题库</div>';
+  view.innerHTML=''+
+    '<div class="manage-head"><div class="back-link" id="mg-back">‹ 返回</div><div class="quiz-title">管理题库</div><span style="width:48px"></span></div>'+
+    '<div class="section-label">现有题库（'+exams.length+'）</div>'+
+    rows+
+    '<div class="section-label" style="margin-top:22px">添加 / 覆盖题库</div>'+
+    '<div class="add-card">'+
+      '<p style="margin:0 0 12px;color:var(--text-2);font-size:13.5px;line-height:1.6">粘贴一套题库 JSON，或选择 .json 文件导入。需含 <b>id</b> / <b>title</b> / <b>questions</b>，格式见 README。同名 id 会覆盖。'+(DEMO_MODE?'<br/><b style="color:var(--warning)">当前为本地演示模式</b>，新增题库存在本浏览器；部署后将写入服务器。':'')+'</p>'+
+      '<textarea id="bank-json" placeholder=\'{&#10;  "id": "my-quiz",&#10;  "title": "我的题库",&#10;  "questions": [ ... ]&#10;}\'></textarea>'+
+      '<div class="add-row"><label class="btn ghost sm" style="position:relative;overflow:hidden">选择 .json 文件<input type="file" id="bank-file" accept=".json,application/json" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label><div style="flex:1"></div><button class="btn" id="bank-save">保存题库</button></div>'+
+      '<div class="login-err" id="bank-err" style="margin-top:10px"></div>'+
+    '</div>';
+  $('#mg-back').onclick=function(){navigate('/');};
+  $$('[data-del]',view).forEach(function(b){b.onclick=async function(){
+    var id=b.dataset.del;if(!confirm('删除题库「'+id+'」？此操作不可撤销。'))return;
+    try{await api.deleteExam(id);toast('已删除');renderManage(view);}catch(e){toast('删除失败：'+e.message);}
+  };});
+  var fileInput=$('#bank-file');
+  fileInput.onchange=function(){var f=fileInput.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){$('#bank-json').value=fr.result;};fr.readAsText(f);};
+  $('#bank-save').onclick=async function(){
+    var err=$('#bank-err');err.textContent='';
+    var raw=$('#bank-json').value.trim();
+    if(!raw){err.textContent='请粘贴 JSON 或选择文件';return;}
+    var ex;try{ex=JSON.parse(raw);}catch(e){err.textContent='JSON 解析失败：'+e.message;return;}
+    try{validateBank(ex);}catch(e){err.textContent=e.message;return;}
+    var btn=this;btn.disabled=true;btn.textContent='保存中…';
+    try{await api.saveExam(ex);toast('已保存题库「'+ex.id+'」');navigate('/');render();}
+    catch(e){err.textContent='保存失败：'+e.message;btn.disabled=false;btn.textContent='保存题库';}
+  };
+}
 
 /* router */
 function getRoute(){return (location.hash||'#/').replace(/^#/,'')||'/';}
@@ -798,10 +980,13 @@ function updateHeaderMeta(){var n=countAllSessions();$('#header-meta').textConte
 
 async function render(){
   var route=getRoute(),view=$('#view');
+  syncAuthUI();
+  if(!isLoggedIn()){renderLogin(view);updateHeaderMeta();window.scrollTo(0,0);return;}
   view.innerHTML='<div class="empty"><div class="spinner"></div>加载中…</div>';
   // cleanup any open drawer key handler from quiz
   try{
     if(route==='/'||route===''){await renderHome(view);}
+    else if(route==='/manage'){await renderManage(view);}
     else if(route.indexOf('/exam/')===0){
       var rest=route.slice(6),pp=rest.split('?'),id=decodeURIComponent(pp[0]);
       var params=new URLSearchParams(pp[1]||'');
@@ -818,10 +1003,7 @@ async function render(){
 /* ===== Home ===== */
 async function renderHome(view){
   var manifest=await loadManifest();
-  var exams=await Promise.all(manifest.exams.map(async function(m){
-    try{var full=await loadExam(m);return Object.assign({},m,{questionCount:(full.questions||[]).length});}
-    catch(e){return Object.assign({},m,{questionCount:0,error:e.message});}
-  }));
+  var exams=manifest.exams||[];
   var solo=exams.length===1;
   var cards=exams.map(function(ex){
     var sessions=listSessions(ex.id);
@@ -844,13 +1026,17 @@ async function renderHome(view){
         '<button class="btn subtle" data-act="download">下载离线版</button>'+
       '</div></div>';
   }).join('');
-  view.innerHTML='<div class="hero fade-in"><h1>考前刷题</h1><p>选择一套试卷开始练习，支持练习与考试两种模式，可下载离线版随时刷。</p></div><div class="exam-grid">'+cards+'</div>';
+  view.innerHTML='<div class="hero fade-in"><h1>考前刷题</h1><p>选择一套试卷开始练习，支持练习与考试两种模式，可下载离线版随时刷。</p></div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn ghost sm" id="home-manage">＋ 管理题库</button></div>'+
+    (exams.length?('<div class="exam-grid">'+cards+'</div>'):'<div class="empty"><div class="ico">📚</div>还没有题库<br/><button class="btn" id="home-manage2">去添加题库</button></div>');
   $$('.exam-card',view).forEach(function(card){
     var id=card.dataset.id,ex=exams.find(function(e){return e.id===id;});
     $('[data-act="start"]',card).onclick=function(){navigate('/exam/'+encodeURIComponent(id));};
     var h=$('[data-act="history"]',card);if(h)h.onclick=function(){showHistory(ex);};
     $('[data-act="download"]',card).onclick=function(){downloadOffline(ex);};
   });
+  var hm=$('#home-manage');if(hm)hm.onclick=function(){navigate('/manage');};
+  var hm2=$('#home-manage2');if(hm2)hm2.onclick=function(){navigate('/manage');};
 }
 
 function showHistory(ex){
@@ -869,10 +1055,8 @@ function showHistory(ex){
 
 /* ===== Exam ===== */
 async function renderExam(view,examId,o){
-  var manifest=await loadManifest();
-  var meta=manifest.exams.find(function(e){return e.id===examId;});
-  if(!meta)throw new Error('找不到套题：'+examId);
-  var exam=await loadExam(meta);
+  var exam=await loadExam(examId);
+  if(!exam||!exam.questions)throw new Error('找不到套题：'+examId);
   var questions=exam.questions,redoInfo=null;
   if(o.redoSid){
     var prev=getSession(exam.id,o.redoSid);
@@ -899,10 +1083,8 @@ async function renderExam(view,examId,o){
 async function renderResult(view,examId,sessionId){
   var session=getSession(examId,sessionId);
   if(!session){view.innerHTML='<div class="empty"><div class="ico">🗂</div>没找到这次答卷记录<br/><button class="btn" onclick="navigate(\'/\')">回首页</button></div>';return;}
-  var manifest=await loadManifest();
-  var meta=manifest.exams.find(function(e){return e.id===examId;});
-  if(!meta)throw new Error('找不到套题：'+examId);
-  var exam=await loadExam(meta);
+  var exam=await loadExam(examId);
+  if(!exam||!exam.questions)throw new Error('找不到套题：'+examId);
   var scope=exam.questions;
   if(session.redoFrom){
     var prev=getSession(exam.id,session.redoFrom);
@@ -913,7 +1095,7 @@ async function renderResult(view,examId,sessionId){
     {label:'重新练习',kind:'ghost',onClick:function(){navigate('/exam/'+encodeURIComponent(examId));}}
   ];
   if(wrong>0)actions.push({label:'重做错题 ('+wrong+')',kind:'warn',onClick:function(){navigate('/exam/'+encodeURIComponent(examId)+'?redo='+encodeURIComponent(sessionId));}});
-  actions.push({label:'下载离线版',kind:'subtle',onClick:function(){downloadOffline(meta);}});
+  actions.push({label:'下载离线版',kind:'subtle',onClick:function(){downloadOffline(exam);}});
   actions.push({label:'返回列表',kind:'ghost',onClick:function(){navigate('/');}});
   renderResultView({
     root:view,scopeQuestions:scope,allQuestions:exam.questions,answers:session.answers,
@@ -925,14 +1107,13 @@ async function renderResult(view,examId,sessionId){
 }
 
 /* ===== Offline export ===== */
-async function downloadOffline(metaOrEx){
+async function downloadOffline(target){
   try{
-    var meta=metaOrEx.file?metaOrEx:(await loadManifest()).exams.find(function(e){return e.id===metaOrEx.id;});
-    var exam=await loadExam(meta);
+    var exam=(target&&target.questions)?target:await loadExam(target&&target.id?target.id:target);
     var html=buildOfflineHTML(exam);
     var blob=new Blob([html],{type:'text/html;charset=utf-8'});
     var url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download=(meta.title||meta.id).replace(/[\\/:*?"<>|]/g,'_')+'.html';
+    a.href=url;a.download=(exam.title||exam.id).replace(/[\\/:*?"<>|]/g,'_')+'.html';
     document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);
     toast('已下载离线版');

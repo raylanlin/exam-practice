@@ -1,5 +1,18 @@
 # 变更记录 · CHANGELOG
 
+## 2026-06-29 — 前后端分离 + 账号登录 + 服务器题库
+
+参考 `learning-tracker-pwa` 的 Flask 后端思路，把项目改造成可跑在阿里云上的前后端方案：
+
+- **后端 `backend/app.py`（Flask）**：账号密码登录（写死在 `USERS`，token 30 天有效）；题库 = `backend/banks/` 文件夹里的 `.json` 文件（与现有 `data/*.json` 格式完全一致），manifest 由后端扫描文件夹自动生成；登录后可经 API 增删题库（写/删文件）。同时托管前端 `index.html`（同源免跨域），也开了 CORS。`backend/README.md` 给了 systemd / Nginx / 占位符部署说明。
+- **前端登录闸门**：未登录只见登录页，进不去首页、答题、离线下载。`localStorage` 存 token / 用户名，401 自动登出。
+- **题库改走 API**：`loadManifest` / `loadExam` 经统一 `api` 层；首页直接用后端给的题数（不再逐套拉取）。
+- **题库管理页 `#/manage`**：列出题库、删除、粘贴 JSON 或导入 `.json` 文件新增/覆盖。
+- **本地演示模式 `DEMO_MODE`**：无后端时用内置账号（`student / exam2026`）登录、读本地 `data/`、增删写浏览器，方便本地预览。部署时改 `DEMO_MODE=false` + `API_BASE`。
+- **离线下载保留**：导出仍是自包含单文件，登录后即可下载，离线全功能。
+
+> 注：原「单文件 GitHub Pages」约束在本方案下转为「前端单文件 + 独立 Flask 后端」；前端本身仍是零依赖单文件，只是把 `fetch` 指向 API。
+
 ## 2026-06-29 — rebase 线上仓库 + 收尾修复
 
 基于已部署仓库（含「军事理论 复习题集」398 题、`SKILL.md`、更新后的 manifest/docs）rebase。部署版 `index.html` 是较早版本，补回三处此前做过、但未随部署生效的修复：
