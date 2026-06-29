@@ -51,6 +51,21 @@ backend/users.json    ← 账号密码
 
 ## 一、识别材料 + 提取题目（和旧版一致）
 
+### 0. 学习通 docx 快路入口
+
+如果用户给的是**学习通网页版导出的 docx**（最常见），直接用 `scripts/parse_xuexitong_docx.py`：
+
+```bash
+pip install python-docx
+python3 scripts/parse_xuexitong_docx.py <docx> <output.json> \
+  --exam-id gdufe-junshililun-2026-summer-quiz1 \
+  --title "军事理论 复习题集" \
+  --subject "军事理论" \
+  --duration 120
+```
+
+脚本已处理学习通 docx 的所有特殊格式（章节题型分组、跨段判断题、0.0 分错题、题干末尾（）等）。输出后**必须**人工核对 0.0 分的错题（脚本会提示「接下来你需要做的」）。详见 `scripts/README.md`。
+
 ### 1. 接收材料，识别来源
 
 | 形态 | 识别方式 |
@@ -59,7 +74,7 @@ backend/users.json    ← 账号密码
 | PDF | pdf 工具 |
 | 纯文本 / Markdown | 直接读 |
 | 已有 JSON / YAML | 解析后规范化 |
-| Word（.docx）| 转文本 / 转 PDF 后再读 |
+| Word（.docx）| **学习通网页版导出的** → `scripts/parse_xuexitong_docx.py` 一键转换；其他来源 → 转文本 / 转 PDF 后再读 |
 | Excel / CSV | 转表格后逐题读 |
 | 微信聊天截图 / 笔记截图 | vision 提取文字 |
 
