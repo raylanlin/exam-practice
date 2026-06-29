@@ -879,6 +879,16 @@ function countAllSessions(){var n=0;for(var i=0;i<localStorage.length;i++){var k
  *            部署到服务器后改为 false，走真实后端。 */
 var API_BASE = 'https://47.250.40.117.sslip.io/exam-practice/api';
 var DEMO_MODE = false;
+/*  自动判断运行模式：只有在「线上 Pages 域名」或「后端同源」时走真实后端，
+ *  其余环境（本地预览 / localhost / file://）一律进演示模式，方便预览。
+ *  可用 ?demo=1 强制演示、?demo=0 强制真实后端。线上不受影响。 */
+(function(){try{
+  var prod=['raylanlin.github.io'];
+  try{prod.push(new URL(API_BASE,location.href).hostname);}catch(e){}
+  if(/(^|[?&])demo=1/.test(location.search)){DEMO_MODE=true;return;}
+  if(/(^|[?&])demo=0/.test(location.search)){DEMO_MODE=false;return;}
+  DEMO_MODE = prod.indexOf(location.hostname)===-1;
+}catch(e){}})();
 /*  演示账号（仅 DEMO_MODE=true 的本地预览用；真实账号在后端 app.py 的 USERS 里配） */
 var DEMO_USERS = { 'student':'exam2026', 'admin':'admin2026' };
 /* ====================================================================== */
