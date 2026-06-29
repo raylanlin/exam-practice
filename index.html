@@ -483,7 +483,7 @@ function mountQuiz(opts){
     var q=questions[i],ua=st.answers[q.id];
     if(st.reviewed[q.id])return gradeQuestion(q,ua).correct?'correct':'wrong';
     if(isAnswered(q,ua))return 'answered';
-    return 'empty';
+    return 'unans';
   }
   function doneCount(){var n=0;questions.forEach(function(q){if(st.reviewed[q.id]||st.revealed[q.id]||isAnswered(q,st.answers[q.id]))n++;});return n;}
 
@@ -628,6 +628,7 @@ function mountQuiz(opts){
     qaa('[data-mode]').forEach(function(b){b.onclick=function(){if(b.dataset.mode===st.mode)return;st.mode=b.dataset.mode;st.reviewed={};st.revealed={};save();render();};});
     var fl=qa('[data-flag]');if(fl)fl.onclick=function(){if(st.flagged[q.id])delete st.flagged[q.id];else st.flagged[q.id]=true;save();render();};
     var rv=qa('[data-reveal]');if(rv)rv.onclick=function(){st.revealed[q.id]=true;save();render();};
+    var rt=qa('[data-retry]');if(rt)rt.onclick=function(){delete st.reviewed[q.id];delete st.revealed[q.id];delete st.answers[q.id];save();render();};
     var pr=qa('[data-primary]');if(pr)pr.onclick=primaryAction;
     // nav drawer
     qa('[data-open-nav]')&&(qa('[data-open-nav]').onclick=function(){st.navOpen=true;render();});
