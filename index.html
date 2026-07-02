@@ -916,7 +916,7 @@ function clearAllUserData(){
   }catch(e){}
 }
 function clearAuth(){try{localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);}catch(e){}}
-function startRefreshTimer(){stopRefreshTimer();_refreshFailCount=0;_refreshTimer=setInterval(api.refreshToken,3*60*1000);}
+function startRefreshTimer(){stopRefreshTimer();_refreshTimer=setInterval(api.refreshToken,3*60*1000);}
 function stopRefreshTimer(){if(_refreshTimer){clearInterval(_refreshTimer);_refreshTimer=null;}}
 function isLoggedIn(){return !!getToken();}
 function syncAuthUI(){
@@ -1030,6 +1030,7 @@ async function doLogin(username,password,btn,err){
   try{
     var res=await api.login(username,password);
     setAuth(res.token,res.username||username);
+    _refreshFailCount=0;
     syncAuthUI();document.title='考前刷题';navigate('/');render();
     if(!DEMO_MODE)startRefreshTimer();
   }catch(e){err.textContent=e.message||'登录失败';btn.disabled=false;btn.textContent='登录';}
@@ -1084,7 +1085,7 @@ async function render(){
   var route=getRoute(),view=$('#view');
   syncAuthUI();
   if(!isLoggedIn()){renderLogin(view);updateHeaderMeta();window.scrollTo(0,0);return;}
-  // 已登录用户页面加载时启动 refresh 定时器
+  // 已登录用户页面加载时启动 refresh 定时器（只在未启动时执行）
   if(!_refreshTimer&&!DEMO_MODE)startRefreshTimer();
   view.innerHTML='<div class="empty"><div class="spinner"></div>加载中…</div>';
   // cleanup any open drawer key handler from quiz
