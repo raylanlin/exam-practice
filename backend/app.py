@@ -72,6 +72,51 @@ def load_users():
 
 USERS = load_users()
 
+# --------------------------------------------------------------------------
+# 账号分级：users.json 里每个账号的值支持两种写法：
+#   "raylan": "密码"                                    ← 旧写法，视为 admin（自用）
+#   "buyer_tom": {"password": "密码", "role": "buyer",
+#                 "banks": ["gdufe-xxx"],                 ← 只能看这些题库
+#                 "expires": "2026-09-01"}                ← 可选，到期无法登录/使用
+# 角色能力：
+#   admin —— 全部题库、可增删题库、不受单设备限制（多设备同时在线）
+#   buyer —— 仅 banks 列表内题库、不可增删、单设备（新登录踢掉旧设备）
+# 权限在服务端每次请求时查，改 users.json + 重启即时生效。
+# --------------------------------------------------------------------------
+def account(username):
+    """返回规范化账号信息 dict，或 None。"""
+    v = USERS.get(username)
+    if v is None:
+        return None
+    if isinstance(v, str):
+        return {"password": v, "role": "admin", "banks": None, "expires": None}
+    if isinstance(v, dict) and isinstance(v.get("password"), str):
+        role = v.get("role", "buyer")
+        if role not in ("admin", "buyer"):
+            role = "buyer"
+        banks = v.get("banks")
+        if not isinstance(banks, list):
+            banks = [] if role == "buyer" else None
+        return {"password": v["password"], "role": role,
+                "banks": None if role == "admin" else banks,
+                "expires": v.get("expires") or None}
+    return None
+
+
+def account_expired(acc):
+    if not acc or not acc.get("expires"):
+        return False
+    try:
+        return datetime.utcnow().date().isoformat() > str(acc["expires"])
+    except Exception:
+        return False
+
+
+def bank_allowed(acc, exam_id):
+    if acc["role"] == "admin" or acc["banks"] is None:
+        return True
+    return exam_id in acc["banks"]
+
 # 签名密钥：用于给 token 签名（防伪造）。优先环境变量 SECRET_KEY，
 # 否则读/生成 backend/secret.key（已 .gitignore，只存服务器）。
 def load_secret():
@@ -97,6 +142,59 @@ TOKEN_TTL = 60 * 60 * 24 * 30  # 登录有效期 30 天（秒）
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 os.makedirs(BANKS_DIR, exist_ok=True)
+
+# --------------------------------------------------------------------------
+# 激活码（发行单文件给买家用）：存在 backend/codes.json，结构：
+#   { "<码>": {"bank":"<题库id>", "note":"备注", "device":null或设备id,
+#              "expires":"YYYY-MM-DD"或null, "revoked":false} }
+# 单个码同时只绑定 1 个设备：用同一码在新设备激活会把旧设备踢下线（同买家账号逻辑）。
+# --------------------------------------------------------------------------
+CODES_FILE = os.environ.get("CODES_FILE", os.path.join(BASE_DIR, "codes.json"))
+_codes_lock_placeholder = None
+
+
+def load_codes():
+    if os.path.isfile(CODES_FILE):
+        try:
+            with open(CODES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def save_codes(codes):
+    with open(CODES_FILE, "w", encoding="utf-8") as f:
+        json.dump(codes, f, ensure_ascii=False, indent=2)
+
+
+def gen_code():
+    import random, string
+    alphabet = string.ascii_uppercase.replace("O", "").replace("I", "") + string.digits
+    return "-".join("".join(random.choice(alphabet) for _ in range(4)) for _ in range(2))
+
+
+def make_license(code, device_id, bank, exp):
+    msg = "lic:%s:%s:%s:%d" % (code, device_id, bank, exp)
+    sig = hmac.new(SECRET, msg.encode("utf-8"), hashlib.sha256).hexdigest()
+    raw = "%s:%s" % (msg, sig)
+    return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii")
+
+
+def verify_license(token):
+    try:
+        raw = base64.urlsafe_b64decode(token.encode("ascii")).decode("utf-8")
+        sig = raw.rsplit(":", 1)[-1]
+        msg_body = raw.rsplit(":", 1)[0]
+        expected = hmac.new(SECRET, msg_body.encode("utf-8"), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        _, code, device_id, bank, exp = msg_body.split(":")
+        if int(exp) < time.time():
+            return None
+        return {"code": code, "device_id": device_id, "bank": bank}
+    except Exception:
+        return None
 
 app = Flask(__name__, static_folder=None)
 if CORS:
@@ -147,7 +245,22 @@ def require_auth(fn):
         user = verify_token(request)
         if not user:
             return jsonify({"error": "未授权或登录已过期"}), 401
+        acc = account(user)
+        if not acc:
+            return jsonify({"error": "账号不存在"}), 401
+        if account_expired(acc):
+            return jsonify({"error": "账号已到期，请联系管理员续费"}), 401
         request.username = user
+        request.account = acc
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+def require_admin(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if getattr(request, "account", {}).get("role") != "admin":
+            return jsonify({"error": "无权限：仅管理账号可操作题库"}), 403
         return fn(*args, **kwargs)
     return wrapper
 
@@ -261,44 +374,56 @@ def login():
     data = request.get_json(silent=True) or {}
     username = (data.get("username") or "").strip()
     password = (data.get("password") or "").strip()
-    ok = username in USERS and hmac.compare_digest(USERS[username], password)
+    acc = account(username)
+    ok = bool(acc) and hmac.compare_digest(acc["password"], password)
     record_login(ip, ok)
     if not ok:
         return jsonify({"error": "账号或密码错误"}), 401
+    if account_expired(acc):
+        return jsonify({"error": "账号已到期，请联系管理员续费"}), 401
 
     token = make_token(username)
-    kicked = username in _active_tokens
-    _active_tokens[username] = token
-
-    resp = {"token": token, "username": username}
-    if kicked:
-        resp["kicked_old_device"] = True
+    resp = {"token": token, "username": username, "role": acc["role"]}
+    # 单设备限制只针对 buyer；admin（自用）不占 slot、不踢旧设备
+    if acc["role"] != "admin":
+        if username in _active_tokens:
+            resp["kicked_old_device"] = True
+        _active_tokens[username] = token
     return jsonify(resp)
 
 
 @app.route("/api/manifest")
 @require_auth
 def get_manifest():
-    return jsonify({"version": 1, "exams": list_banks()})
+    acc = request.account
+    exams = [e for e in list_banks() if bank_allowed(acc, e["id"])]
+    return jsonify({"version": 1, "exams": exams, "role": acc["role"]})
 
 
 @app.route("/api/refresh", methods=["POST"])
 @require_auth
 def refresh_token():
-    """用旧 token 换新 token。只有当前 _active_tokens 里的 token 才允许换。"""
+    """用旧 token 换新 token。buyer 只有当前活跃 slot 里的 token 能换；
+    admin 不受单设备限制，任何有效 token 都能换。"""
     user = request.username
-    auth = request.headers.get("Authorization", "")
-    token_str = auth[7:] if auth.startswith("Bearer ") else ""
-    if _active_tokens.get(user) != token_str:
-        return jsonify({"error": "账号已在其他设备登录，请重新登录"}), 401
-    new_token = make_token(user)
-    _active_tokens[user] = new_token
-    return jsonify({"token": new_token})
+    acc = request.account
+    if acc["role"] != "admin":
+        auth = request.headers.get("Authorization", "")
+        token_str = auth[7:] if auth.startswith("Bearer ") else ""
+        if _active_tokens.get(user) != token_str:
+            return jsonify({"error": "账号已在其他设备登录，请重新登录"}), 401
+        new_token = make_token(user)
+        _active_tokens[user] = new_token
+    else:
+        new_token = make_token(user)
+    return jsonify({"token": new_token, "role": acc["role"]})
 
 
 @app.route("/api/exam/<exam_id>")
 @require_auth
 def get_exam(exam_id):
+    if not bank_allowed(request.account, exam_id):
+        return jsonify({"error": "无权限访问该题库"}), 403
     path = find_bank_file(exam_id)
     if not path:
         return jsonify({"error": "找不到该题库"}), 404
@@ -310,6 +435,7 @@ def get_exam(exam_id):
 
 @app.route("/api/exam", methods=["POST"])
 @require_auth
+@require_admin
 def save_exam():
     data = request.get_json(silent=True) or {}
     err = validate_bank(data)
@@ -323,12 +449,138 @@ def save_exam():
 
 @app.route("/api/exam/<exam_id>", methods=["DELETE"])
 @require_auth
+@require_admin
 def delete_exam(exam_id):
     path = find_bank_file(exam_id)
     if not path:
         return jsonify({"error": "找不到该题库"}), 404
     os.remove(path)
     return ("", 204)
+
+
+# --------------------------------------------------------------------------
+# 激活码（管理 = admin。激活/心跳 = 公开，供发行的单文件调用，不需 Bearer token）
+# --------------------------------------------------------------------------
+@app.route("/api/codes", methods=["GET"])
+@require_auth
+@require_admin
+def list_codes():
+    bank = request.args.get("bank")
+    codes = load_codes()
+    out = []
+    for c, v in codes.items():
+        if bank and v.get("bank") != bank:
+            continue
+        out.append(dict(v, code=c))
+    return jsonify({"codes": out})
+
+
+@app.route("/api/codes", methods=["POST"])
+@require_auth
+@require_admin
+def create_code():
+    data = request.get_json(silent=True) or {}
+    bank = data.get("bank")
+    if not safe_id(bank) or not find_bank_file(bank):
+        return jsonify({"error": "题库 id 无效"}), 400
+    codes = load_codes()
+    code = data.get("code") or gen_code()
+    while code in codes:
+        code = gen_code()
+    codes[code] = {
+        "bank": bank,
+        "note": (data.get("note") or "").strip()[:100],
+        "device": None,
+        "expires": data.get("expires") or None,
+        "revoked": False,
+    }
+    save_codes(codes)
+    return jsonify(dict(codes[code], code=code))
+
+
+@app.route("/api/codes/<code>", methods=["DELETE"])
+@require_auth
+@require_admin
+def revoke_code(code):
+    codes = load_codes()
+    if code not in codes:
+        return jsonify({"error": "激活码不存在"}), 404
+    codes[code]["revoked"] = True
+    save_codes(codes)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/codes/<code>/reset", methods=["POST"])
+@require_auth
+@require_admin
+def reset_code(code):
+    """清除设备绑定，让买家换设备时无需踢人就能重新激活（或用于遗失设备后重置）。"""
+    codes = load_codes()
+    if code not in codes:
+        return jsonify({"error": "激活码不存在"}), 404
+    codes[code]["device"] = None
+    save_codes(codes)
+    return jsonify({"status": "ok"})
+
+
+def _code_state(v):
+    if v.get("revoked"):
+        return "revoked"
+    if v.get("expires") and datetime.utcnow().date().isoformat() > str(v["expires"]):
+        return "expired"
+    return "ok"
+
+
+@app.route("/api/license/activate", methods=["POST"])
+def license_activate():
+    """买家发行包首次激活（或换设备重激活）。无需登录账号，只需激活码 + 本机生成的设备 id。"""
+    ip = request.headers.get("X-Real-IP") or request.remote_addr or "?"
+    if login_locked(ip):
+        return jsonify({"error": "尝试过于频繁，请 5 分钟后再试"}), 429
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    device_id = (data.get("device_id") or "").strip()
+    if not code or not device_id:
+        return jsonify({"error": "缺少激活码或设备标识"}), 400
+    codes = load_codes()
+    v = codes.get(code)
+    record_login(ip, bool(v))
+    if not v:
+        return jsonify({"error": "激活码不存在"}), 404
+    state = _code_state(v)
+    if state == "revoked":
+        return jsonify({"error": "激活码已被吐销"}), 403
+    if state == "expired":
+        return jsonify({"error": "激活码已过期"}), 403
+    path = find_bank_file(v["bank"])
+    if not path:
+        return jsonify({"error": "对应题库不存在"}), 404
+    kicked = v.get("device") and v["device"] != device_id
+    v["device"] = device_id
+    save_codes(codes)
+    exp = int(time.time()) + TOKEN_TTL
+    token = make_license(code, device_id, v["bank"], exp)
+    resp = {"license": token, "exam": read_bank(path)}
+    if kicked:
+        resp["kicked_old_device"] = True
+    return jsonify(resp)
+
+
+@app.route("/api/license/heartbeat", methods=["POST"])
+def license_heartbeat():
+    """发行包定期心跳：确认本设备仍是该码当前绑定的设备（否则说明被其他设备重新激活踢下线了）。"""
+    auth = request.headers.get("Authorization", "")
+    token = auth[7:] if auth.startswith("Bearer ") else ""
+    lic = verify_license(token)
+    if not lic:
+        return jsonify({"ok": False, "error": "授权已失效"}), 401
+    data = request.get_json(silent=True) or {}
+    device_id = (data.get("device_id") or "").strip()
+    codes = load_codes()
+    v = codes.get(lic["code"])
+    if not v or _code_state(v) != "ok" or v.get("device") != device_id or lic["device_id"] != device_id:
+        return jsonify({"ok": False, "error": "已在其他设备激活，本设备已失效"}), 409
+    return jsonify({"ok": True})
 
 
 # --------------------------------------------------------------------------

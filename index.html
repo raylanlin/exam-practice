@@ -447,6 +447,17 @@ button{font-family:inherit}
 .add-card textarea{width:100%;min-height:150px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;font-family:ui-monospace,"SF Mono",Menlo,monospace;line-height:1.6;resize:vertical}
 .add-card textarea:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
 .add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.code-panel{margin:0 0 10px;padding:14px 16px;background:var(--surface-2);border-radius:var(--radius-sm)}
+.code-item{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;flex-wrap:wrap}
+.code-item code{background:var(--surface);border:1px solid var(--border);padding:3px 9px;border-radius:6px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-weight:700;letter-spacing:.5px}
+.code-item .st{font-size:11.5px;padding:2px 9px;border-radius:999px;font-weight:700}
+.code-item .st.ok{background:var(--success-soft);color:var(--success)}
+.code-item .st.bound{background:var(--primary-soft);color:var(--primary)}
+.code-item .st.bad{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.code-item .sp{flex:1;min-width:6px}
+.code-new-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.code-new-row input{border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:8px 11px;border-radius:var(--radius-xs);font-size:13.5px;font-family:inherit}
+.code-new-row input[type="text"]{width:150px}
 
 /* ---------- Responsive ---------- */
 @media (min-width:880px){
@@ -872,6 +883,26 @@ function openDensity(){
   $('[data-dz-done]',wrap).onclick=close;
 }
 $('#density-btn').onclick=openDensity;
+function showIssuedDialog(code,title){
+  var wrap=document.createElement('div');wrap.className='density-scrim';
+  wrap.innerHTML='<div class="density-pop" role="dialog" aria-label="发行包已生成" style="width:min(360px,88vw);text-align:left">'+
+    '<div class="dz-title" style="text-align:center">✅ 发行包已生成</div>'+
+    '<p style="margin:0 0 12px;color:var(--text-2);font-size:13.5px;line-height:1.6">「'+esc(title)+'」的加锁单文件已开始下载。把下载的文件和下面这个激活码<b>分开发送</b>给买家：</p>'+
+    '<div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px">'+
+      '<code style="flex:1;font-size:18px;font-weight:800;letter-spacing:1px;font-family:ui-monospace,monospace">'+esc(code)+'</code>'+
+      '<button class="btn ghost sm" id="iss-copy">复制</button>'+
+    '</div>'+
+    '<p style="margin:0 0 16px;color:var(--text-3);font-size:12.5px;line-height:1.6">同一文件可重复用给其他买家，每人用自己的激活码激活即可（在「管理已发行」里再生成新码）。激活码请当密码保密，同一时间只能在一台设备使用。</p>'+
+    '<button class="btn" data-dz-done style="width:100%">完成</button></div>';
+  document.body.appendChild(wrap);
+  $('#iss-copy',wrap).onclick=function(){
+    var done=function(){toast('已复制激活码');};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,done);else done();
+  };
+  function close(){wrap.remove();}
+  wrap.addEventListener('click',function(e){if(e.target===wrap)close();});
+  $('[data-dz-done]',wrap).onclick=close;
+}
 window.addEventListener('scroll',function(){$('#app-header').classList.toggle('scrolled',window.scrollY>4);},{passive:true});
 
 /* storage */
@@ -901,14 +932,21 @@ var DEMO_MODE = false;
   if(/(^|[?&])demo=0/.test(location.search)){DEMO_MODE=false;return;}
   DEMO_MODE = prod.indexOf(location.hostname)===-1;
 }catch(e){}})();
-/*  演示账号（仅 DEMO_MODE=true 的本地预览用；真实账号在后端 app.py 的 USERS 里配） */
-var DEMO_USERS = { 'student':'exam2026', 'admin':'admin2026' };
+/*  演示账号（仅 DEMO_MODE=true 的本地预览用；真实账号在后端 users.json 里配）
+ *  student/admin 为管理角色；buyer 演示买家角色（仅 demo 题库、无管理/离线下载） */
+var DEMO_USERS = {
+  'student': {password:'exam2026', role:'admin'},
+  'admin':   {password:'admin2026', role:'admin'},
+  'buyer':   {password:'buy2026',  role:'buyer', banks:['demo']}
+};
 /* ====================================================================== */
 
-var TOKEN_KEY='exam-practice:token', USER_KEY='exam-practice:user';
+var TOKEN_KEY='exam-practice:token', USER_KEY='exam-practice:user', ROLE_KEY='exam-practice:role';
 function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
 function getUser(){try{return localStorage.getItem(USER_KEY)||'';}catch(e){return '';}}
-function setAuth(t,u){try{localStorage.setItem(TOKEN_KEY,t);localStorage.setItem(USER_KEY,u);}catch(e){}}
+function getRole(){try{return localStorage.getItem(ROLE_KEY)||'admin';}catch(e){return 'admin';}}
+function isAdmin(){return getRole()==='admin';}
+function setAuth(t,u,role){try{localStorage.setItem(TOKEN_KEY,t);localStorage.setItem(USER_KEY,u);if(role)localStorage.setItem(ROLE_KEY,role);}catch(e){}}
 var _refreshTimer=null,_refreshFailCount=0;
 function clearAllUserData(){
   try{
@@ -916,12 +954,15 @@ function clearAllUserData(){
   }catch(e){}
 }
 function clearAuth(){try{localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);}catch(e){}}
-function startRefreshTimer(){stopRefreshTimer();_refreshTimer=setInterval(api.refreshToken,3*60*1000);}
+function startRefreshTimer(){stopRefreshTimer();_refreshTimer=setInterval(function(){api.refreshToken();},3*60*1000);api.refreshToken();/* 启动时立即校验一次，被踢设备秒级感知而非等 3 分钟 */}
 function stopRefreshTimer(){if(_refreshTimer){clearInterval(_refreshTimer);_refreshTimer=null;}}
+/* 手机切后台后定时器会被挂起；回到前台立刻补一次校验 */
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&!DEMO_MODE&&isLoggedIn()&&_refreshTimer)api.refreshToken();});
 function isLoggedIn(){return !!getToken();}
 function syncAuthUI(){
   var on=isLoggedIn();
-  ['manage-btn','logout-btn'].forEach(function(id){var el=$('#'+id);if(el)el.style.display=on?'':'none';});
+  var lb=$('#logout-btn');if(lb)lb.style.display=on?'':'none';
+  var mb=$('#manage-btn');if(mb)mb.style.display=(on&&isAdmin())?'':'none';
   var hu=$('#header-user');if(hu){hu.style.display=on?'':'none';hu.textContent=on?getUser():'';}
 }
 
@@ -930,6 +971,15 @@ var MOCK_BANKS_KEY='exam-practice:mock-banks';
 function mockBanks(){try{return JSON.parse(localStorage.getItem(MOCK_BANKS_KEY)||'{}');}catch(e){return {};}}
 function mockSaveBank(ex){var all=mockBanks();all[ex.id]=ex;localStorage.setItem(MOCK_BANKS_KEY,JSON.stringify(all));}
 function mockDeleteBank(id){var all=mockBanks();delete all[id];localStorage.setItem(MOCK_BANKS_KEY,JSON.stringify(all));}
+
+/* ---- 本地演示模式的激活码存储 ---- */
+var MOCK_CODES_KEY='exam-practice:mock-codes';
+function mockCodesAll(){try{return JSON.parse(localStorage.getItem(MOCK_CODES_KEY)||'{}');}catch(e){return {};}}
+function mockCodesFor(bank){var all=mockCodesAll();return Object.keys(all).filter(function(c){return all[c].bank===bank;}).map(function(c){return Object.assign({code:c},all[c]);});}
+function genMockCode(){var az='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';function seg(){var s='';for(var i=0;i<4;i++)s+=az[Math.floor(Math.random()*az.length)];return s;}return seg()+'-'+seg();}
+function mockCreateCode(data){var all=mockCodesAll();var code=data.code||genMockCode();while(all[code])code=genMockCode();all[code]={bank:data.bank,note:data.note||'',device:null,expires:data.expires||null,revoked:false};localStorage.setItem(MOCK_CODES_KEY,JSON.stringify(all));return Object.assign({code:code},all[code]);}
+function mockRevokeCode(code){var all=mockCodesAll();if(all[code])all[code].revoked=true;localStorage.setItem(MOCK_CODES_KEY,JSON.stringify(all));}
+function mockResetCode(code){var all=mockCodesAll();if(all[code])all[code].device=null;localStorage.setItem(MOCK_CODES_KEY,JSON.stringify(all));}
 function examMeta(ex){return {id:ex.id,file:ex.id+'.json',title:ex.title||ex.id,subject:ex.subject||'',examDate:ex.examDate||'',duration:ex.duration||0,description:ex.description||'',questionCount:(ex.questions||[]).length};}
 function validateBank(ex){
   if(!ex||typeof ex!=='object'||Array.isArray(ex))throw new Error('不是合法的题库对象');
@@ -943,7 +993,8 @@ function validateBank(ex){
 var api={
   async login(username,password){
     if(DEMO_MODE){
-      if(DEMO_USERS[username]&&DEMO_USERS[username]===password)return {token:'demo.'+btoa(username+':'+Date.now()),username:username};
+      var du=DEMO_USERS[username];
+      if(du&&du.password===password)return {token:'demo.'+btoa(username+':'+Date.now()),username:username,role:du.role||'admin'};
       throw new Error('账号或密码错误');
     }
     var r=await fetch(API_BASE+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:username,password:password})});
@@ -960,6 +1011,7 @@ var api={
       }));
       var custom=mockBanks(),ids={};metas.forEach(function(m){ids[m.id]=true;});
       Object.keys(custom).forEach(function(id){var m=examMeta(custom[id]);if(ids[id]){metas=metas.map(function(x){return x.id===id?m:x;});}else{metas.push(m);ids[id]=true;}});
+      if(!isAdmin()){var du=DEMO_USERS[getUser()],allow=(du&&du.banks)||[];metas=metas.filter(function(m){return allow.indexOf(m.id)>=0;});}
       return {exams:metas};
     }
     return this._get('/manifest');
@@ -976,6 +1028,10 @@ var api={
   },
   async saveExam(ex){if(DEMO_MODE){mockSaveBank(ex);return {status:'ok'};}return this._send('POST','/exam',ex);},
   async deleteExam(id){if(DEMO_MODE){mockDeleteBank(id);return {status:'ok'};}return this._send('DELETE','/exam/'+encodeURIComponent(id));},
+  async codes(bank){if(DEMO_MODE){return {codes:mockCodesFor(bank)};}return this._get('/codes?bank='+encodeURIComponent(bank));},
+  async createCode(data){if(DEMO_MODE){return mockCreateCode(data);}return this._send('POST','/codes',data);},
+  async revokeCode(code){if(DEMO_MODE){mockRevokeCode(code);return {status:'ok'};}return this._send('DELETE','/codes/'+encodeURIComponent(code));},
+  async resetCode(code){if(DEMO_MODE){mockResetCode(code);return {status:'ok'};}return this._send('POST','/codes/'+encodeURIComponent(code)+'/reset');},
   async _get(path){return this._handle(await fetch(API_BASE+path,{headers:{'Authorization':'Bearer '+getToken()}}));},
   async _send(method,path,body){return this._handle(await fetch(API_BASE+path,{method:method,headers:{'Authorization':'Bearer '+getToken(),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}));},
   async _handle(r){
@@ -986,16 +1042,19 @@ var api={
   },
   async refreshToken(){
     if(DEMO_MODE)return {token:getToken()};
-    var r=await fetch(API_BASE+'/refresh',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});
+    if(!getToken())return null;
+    var r;
+    try{r=await fetch(API_BASE+'/refresh',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});}
+    catch(e){return null;/* 纯网络故障：不计入失败、不报错，下个周期重试 */}
     if(!r.ok){
-      _refreshFailCount++;
+      if(r.status===401||r.status===403||r.status===409){_refreshFailCount++;}
       if(_refreshFailCount>=2){
-        clearAllUserData();syncAuthUI();navigate('/');toast('账号已在其他设备登录');
+        stopRefreshTimer();clearAllUserData();syncAuthUI();navigate('/');render();toast('账号已在其他设备登录');
       }
       return null;
     }
     _refreshFailCount=0;
-    var j=await r.json();setAuth(j.token,getUser());return j;
+    try{var j=await r.json();setAuth(j.token,getUser(),j.role);return j;}catch(e){return null;}
   }
 };
 
@@ -1029,7 +1088,7 @@ async function doLogin(username,password,btn,err){
   btn.disabled=true;btn.textContent='登录中…';
   try{
     var res=await api.login(username,password);
-    setAuth(res.token,res.username||username);
+    setAuth(res.token,res.username||username,res.role||'admin');
     _refreshFailCount=0;
     syncAuthUI();document.title='考前刷题';navigate('/');render();
     if(!DEMO_MODE)startRefreshTimer();
@@ -1038,14 +1097,23 @@ async function doLogin(username,password,btn,err){
 
 /* ===== 管理题库 ===== */
 async function renderManage(view){
+  if(!isAdmin()){toast('无权限访问');navigate('/');render();return;}
   var manifest=await loadManifest();
   var exams=manifest.exams||[];
   var rows=exams.map(function(ex){
-    return '<div class="bank-row" data-id="'+esc(ex.id)+'"><div class="info"><div class="nm">'+esc(ex.title||ex.id)+'</div><div class="mt">'+esc(ex.id)+' · '+(ex.questionCount||0)+' 题'+(ex.subject?' · '+esc(ex.subject):'')+'</div></div><button class="btn ghost sm" data-del="'+esc(ex.id)+'">删除</button></div>';
+    var id=esc(ex.id);
+    return '<div class="bank-row" data-id="'+id+'"><div class="info"><div class="nm">'+esc(ex.title||ex.id)+'</div><div class="mt">'+id+' · '+(ex.questionCount||0)+' 题'+(ex.subject?' · '+esc(ex.subject):'')+'</div></div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+
+        '<button class="btn sm" data-issue="'+id+'" data-title="'+esc(ex.title||ex.id)+'">⬇ 生成并下载发行包</button>'+
+        '<button class="btn ghost sm" data-codes="'+id+'">管理已发行</button>'+
+        '<button class="btn ghost sm" data-del="'+id+'">删除</button>'+
+      '</div></div>'+
+      '<div class="code-panel" id="codes-'+id+'" style="display:none"></div>';
   }).join('')||'<div class="empty" style="padding:30px 0">还没有题库</div>';
   view.innerHTML=''+
     '<div class="manage-head"><div class="back-link" id="mg-back">‹ 返回</div><div class="quiz-title">管理题库</div><span style="width:48px"></span></div>'+
     '<div class="section-label">现有题库（'+exams.length+'）</div>'+
+    '<p style="margin:-6px 0 14px;color:var(--text-3);font-size:13px;line-height:1.6">「生成并下载发行包」一键生成一个新激活码 + 下载对应的加锁单文件，把文件和码分别发给买家即可；同一文件可重复用于多个买家，每人用自己的码激活。「管理已发行」可查看/吊销/重置现有码。</p>'+
     rows+
     '<div class="section-label" style="margin-top:22px">添加 / 覆盖题库</div>'+
     '<div class="add-card">'+
@@ -1059,6 +1127,24 @@ async function renderManage(view){
     var id=b.dataset.del;if(!confirm('删除题库「'+id+'」？此操作不可撤销。'))return;
     try{await api.deleteExam(id);toast('已删除');renderManage(view);}catch(e){toast('删除失败：'+e.message);}
   };});
+  $$('[data-codes]',view).forEach(function(b){b.onclick=function(){
+    var id=b.dataset.codes,panel=$('#codes-'+id,view);
+    var open=panel.style.display!=='none';
+    if(open){panel.style.display='none';return;}
+    panel.style.display='';
+    renderCodesPanel(id,panel);
+  };});
+  $$('[data-issue]',view).forEach(function(b){b.onclick=async function(){
+    var id=b.dataset.issue,title=b.dataset.title;
+    b.disabled=true;var old=b.textContent;b.textContent='生成中…';
+    try{
+      var res=await api.createCode({bank:id,note:'',expires:null});
+      await downloadLicensed(id,title);
+      showIssuedDialog(res.code,title);
+      var panel=$('#codes-'+id,view);if(panel&&panel.style.display!=='none')renderCodesPanel(id,panel);
+    }catch(e){toast('生成失败：'+e.message);}
+    b.disabled=false;b.textContent=old;
+  };});
   var fileInput=$('#bank-file');
   fileInput.onchange=function(){var f=fileInput.files[0];if(!f)return;var fr=new FileReader();fr.onload=function(){$('#bank-json').value=fr.result;};fr.readAsText(f);};
   $('#bank-save').onclick=async function(){
@@ -1070,6 +1156,47 @@ async function renderManage(view){
     var btn=this;btn.disabled=true;btn.textContent='保存中…';
     try{await api.saveExam(ex);toast('已保存题库「'+ex.id+'」');navigate('/');render();}
     catch(e){err.textContent='保存失败：'+e.message;btn.disabled=false;btn.textContent='保存题库';}
+  };
+}
+
+function codeStatus(c){
+  if(c.revoked)return {label:'已吊销',cls:'bad'};
+  if(c.expires&&new Date(c.expires+'T23:59:59')<new Date())return {label:'已过期',cls:'bad'};
+  if(c.device)return {label:'已绑定设备',cls:'bound'};
+  return {label:'未激活',cls:'ok'};
+}
+async function renderCodesPanel(bankId,panel){
+  panel.innerHTML='<div style="color:var(--text-3);font-size:13px">加载中…</div>';
+  var list;try{list=(await api.codes(bankId)).codes||[];}catch(e){panel.innerHTML='<div class="login-err">加载失败：'+esc(e.message)+'</div>';return;}
+  var items=list.map(function(c){
+    var s=codeStatus(c);
+    return '<div class="code-item"><code>'+esc(c.code)+'</code><span class="st '+s.cls+'">'+s.label+'</span>'+
+      (c.note?'<span style="color:var(--text-3)">'+esc(c.note)+'</span>':'')+
+      (c.expires?'<span style="color:var(--text-3)">至 '+esc(c.expires)+'</span>':'')+
+      '<span class="sp"></span>'+
+      (c.device?'<button class="btn ghost sm" data-reset="'+esc(c.code)+'">重置设备</button>':'')+
+      (!c.revoked?'<button class="btn ghost sm" data-revoke="'+esc(c.code)+'">吊销</button>':'')+
+    '</div>';
+  }).join('')||'<div style="color:var(--text-3);font-size:13px;padding:4px 0 10px">该题库还没有激活码</div>';
+  panel.innerHTML=items+
+    '<div class="code-new-row">'+
+      '<input type="text" id="cn-note-'+esc(bankId)+'" placeholder="备注（如买家昵称）">'+
+      '<input type="date" id="cn-exp-'+esc(bankId)+'" title="到期日期（可留空=永久）">'+
+      '<button class="btn sm" id="cn-add-'+esc(bankId)+'">＋ 另生成一个激活码（不重新下载文件）</button>'+
+    '</div>';
+  $$('[data-revoke]',panel).forEach(function(b){b.onclick=async function(){
+    if(!confirm('吊销激活码「'+b.dataset.revoke+'」？买家将无法再用它激活/续用。'))return;
+    try{await api.revokeCode(b.dataset.revoke);renderCodesPanel(bankId,panel);}catch(e){toast('操作失败：'+e.message);}
+  };});
+  $$('[data-reset]',panel).forEach(function(b){b.onclick=async function(){
+    try{await api.resetCode(b.dataset.reset);toast('已重置设备绑定，买家可在新设备重新激活');renderCodesPanel(bankId,panel);}catch(e){toast('操作失败：'+e.message);}
+  };});
+  var addBtn=$('#cn-add-'+bankId,panel);
+  addBtn.onclick=async function(){
+    var note=$('#cn-note-'+bankId,panel).value.trim(),exp=$('#cn-exp-'+bankId,panel).value||null;
+    addBtn.disabled=true;
+    try{var res=await api.createCode({bank:bankId,note:note,expires:exp});toast('已生成激活码：'+res.code);renderCodesPanel(bankId,panel);}
+    catch(e){toast('生成失败：'+e.message);addBtn.disabled=false;}
   };
 }
 
@@ -1130,18 +1257,18 @@ async function renderHome(view){
         '<button class="btn" data-act="start">开始练习</button>'+
         '<button class="btn ghost" data-act="recite">背题</button>'+
         (sessions.length?'<button class="btn ghost" data-act="history">历史 ('+sessions.length+')</button>':'')+
-        '<button class="btn subtle" data-act="download">下载离线版</button>'+
+        (isAdmin()?'<button class="btn subtle" data-act="download">下载离线版</button>':'')+
       '</div></div>';
   }).join('');
-  view.innerHTML='<div class="hero fade-in"><h1>考前刷题</h1><p>选择一套试卷开始练习，支持练习与考试两种模式，可下载离线版随时刷。</p></div>'+
-    '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn ghost sm" id="home-manage">＋ 管理题库</button></div>'+
-    (exams.length?('<div class="exam-grid">'+cards+'</div>'):'<div class="empty"><div class="ico">📚</div>还没有题库<br/><button class="btn" id="home-manage2">去添加题库</button></div>');
+  view.innerHTML='<div class="hero fade-in"><h1>考前刷题</h1><p>选择一套试卷开始练习，支持练习与考试两种模式。</p></div>'+
+    (isAdmin()?'<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn ghost sm" id="home-manage">＋ 管理题库</button></div>':'')+
+    (exams.length?('<div class="exam-grid">'+cards+'</div>'):'<div class="empty"><div class="ico">📚</div>'+(isAdmin()?'还没有题库<br/><button class="btn" id="home-manage2">去添加题库</button>':'暂无可用题库，请联系管理员开通')+'</div>');
   $$('.exam-card',view).forEach(function(card){
     var id=card.dataset.id,ex=exams.find(function(e){return e.id===id;});
     $('[data-act="start"]',card).onclick=function(){navigate('/exam/'+encodeURIComponent(id));};
     $('[data-act="recite"]',card).onclick=function(){navigate('/recite/'+encodeURIComponent(id));};
     var h=$('[data-act="history"]',card);if(h)h.onclick=function(){showHistory(ex);};
-    $('[data-act="download"]',card).onclick=function(){downloadOffline(ex);};
+    var dl=$('[data-act="download"]',card);if(dl)dl.onclick=function(){downloadOffline(ex);};
   });
   var hm=$('#home-manage');if(hm)hm.onclick=function(){navigate('/manage');};
   var hm2=$('#home-manage2');if(hm2)hm2.onclick=function(){navigate('/manage');};
@@ -1239,7 +1366,7 @@ async function renderResult(view,examId,sessionId){
     {label:'重新练习',kind:'ghost',onClick:function(){navigate('/exam/'+encodeURIComponent(examId));}}
   ];
   if(wrong>0)actions.push({label:'重做错题 ('+wrong+')',kind:'warn',onClick:function(){navigate('/exam/'+encodeURIComponent(examId)+'?redo='+encodeURIComponent(sessionId));}});
-  actions.push({label:'下载离线版',kind:'subtle',onClick:function(){downloadOffline(exam);}});
+  if(isAdmin())actions.push({label:'下载离线版',kind:'subtle',onClick:function(){downloadOffline(exam);}});
   actions.push({label:'返回列表',kind:'ghost',onClick:function(){navigate('/');}});
   renderResultView({
     root:view,scopeQuestions:scope,allQuestions:exam.questions,answers:session.answers,
@@ -1262,6 +1389,109 @@ async function downloadOffline(target){
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},120);
     toast('已下载离线版');
   }catch(e){toast('下载失败：'+e.message);}
+}
+
+/* ===== 授权发行包（激活码锁，单设备） ===== */
+async function downloadLicensed(bankId,title){
+  try{
+    var css=$('#app-css').textContent;
+    var engine=$('#engine-js').textContent.replace(/<\/script/gi,'<\\/script');
+    var apiBase=JSON.stringify(API_BASE);
+    var bankIdJS=JSON.stringify(bankId), titleJS=JSON.stringify(title||bankId);
+    var boot=[
+      "var API_BASE=__API__, BANK=__BANK__, TITLE=__TITLE__;",
+      "var DKEY='examlic:'+BANK+':device', TKEY='examlic:'+BANK+':token', EKEY='examlic:'+BANK+':exam', PKEY='exam-offline-progress:'+BANK;",
+      "applyTheme();",
+      "var tb=document.getElementById('theme-btn');function sb(){tb.textContent=themeGlyph();}sb();tb.onclick=function(){toggleTheme();sb();};",
+      "matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getThemePref()==='auto'){applyTheme();sb();}});",
+      "window.__toast=function(m,ms){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.__toast._t);window.__toast._t=setTimeout(function(){t.classList.remove('show');},ms||1800);};",
+      "var view=document.getElementById('view');",
+      "/* 防拷贝威慏（阻挡普通用户，非绝对防线） */",
+      "document.addEventListener('contextmenu',function(e){e.preventDefault();});",
+      "document.addEventListener('copy',function(e){e.preventDefault();});",
+      "document.addEventListener('cut',function(e){e.preventDefault();});",
+      "document.addEventListener('keydown',function(e){var k=(e.key||'').toUpperCase();if(e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(k==='I'||k==='J'||k==='C'))||((e.ctrlKey||e.metaKey)&&(k==='U'||k==='S'||k==='P'))){e.preventDefault();e.stopPropagation();}},true);",
+      "/* 题库缓存混淆：以设备id+授权串为密钥 XOR 后 base64，直接翻 localStorage 看不到明文 */",
+      "function xj(s,k){var o='';for(var i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}",
+      "function obKey(){return deviceId()+'|'+BANK;}",
+      "function encData(s){try{return btoa(unescape(encodeURIComponent(xj(s,obKey()))));}catch(e){return '';}}",
+      "function decData(s){try{return xj(decodeURIComponent(escape(atob(s))),obKey());}catch(e){return null;}}",
+      "function deviceId(){var d;try{d=localStorage.getItem(DKEY);}catch(e){}if(!d){d=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('d-'+Date.now()+'-'+Math.random().toString(36).slice(2));try{localStorage.setItem(DKEY,d);}catch(e){}}return d;}",
+      "function lock(msg){try{localStorage.removeItem(TKEY);localStorage.removeItem(EKEY);localStorage.removeItem(PKEY);}catch(e){}showGate(msg);}",
+      "function showGate(msg){",
+      "  view.innerHTML='<div class=\"login-wrap fade-in\"><div class=\"login-card\"><h2>'+TITLE+'</h2><p class=\"sub\">输入激活码解锁本套题库（需联网验证，仅限一台设备同时使用）</p>'+",
+      "    '<div class=\"field\"><label for=\"lic-code\">激活码</label><input id=\"lic-code\" type=\"text\" autocapitalize=\"characters\" autocomplete=\"off\" placeholder=\"XXXX-XXXX\"></div>'+",
+      "    '<div class=\"login-err\" id=\"lic-err\"></div><button class=\"btn\" id=\"lic-btn\">激活</button></div></div>';",
+      "  if(msg)document.getElementById('lic-err').textContent=msg;",
+      "  var inp=document.getElementById('lic-code'),btn=document.getElementById('lic-btn'),err=document.getElementById('lic-err');",
+      "  function submit(){activate(inp.value.trim(),btn,err);}",
+      "  btn.onclick=submit;inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();submit();}};",
+      "  setTimeout(function(){inp.focus();},50);",
+      "}",
+      "async function activate(code,btn,err){",
+      "  err.textContent='';if(!code){err.textContent='请输入激活码';return;}",
+      "  btn.disabled=true;btn.textContent='激活中…';",
+      "  try{",
+      "    var r=await fetch(API_BASE+'/license/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,device_id:deviceId()})});",
+      "    var j=await r.json().catch(function(){return {};});",
+      "    if(!r.ok)throw new Error(j.error||'激活失败');",
+      "    localStorage.setItem(TKEY,j.license);localStorage.setItem(EKEY,encData(JSON.stringify(j.exam)));",
+      "    boot();",
+      "  }catch(e){err.textContent=e.message||'激活失败';btn.disabled=false;btn.textContent='激活';}",
+      "}",
+      "async function heartbeat(){",
+      "  var token;try{token=localStorage.getItem(TKEY);}catch(e){return;}if(!token)return;",
+      "  try{",
+      "    var r=await fetch(API_BASE+'/license/heartbeat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({device_id:deviceId()})});",
+      "    if(r.status===401||r.status===409){lock('已在其他设备重新激活，本机访问已失效。若需换回本机，请重新输入激活码。');}",
+      "  }catch(e){/* 离线：容错，不锁 */}",
+      "}",
+      "function startQuiz(qs,redoInfo,exam){",
+      "  var init=null,resumed=false;",
+      "  if(!redoInfo){try{var sv=JSON.parse(localStorage.getItem(PKEY)||'null');if(sv&&sv.answers&&Object.keys(sv.answers).length){init=sv;resumed=true;}}catch(e){}}",
+      "  mountQuiz({root:view,questions:qs,redoInfo:redoInfo,persistKey:redoInfo?null:PKEY,initialState:init,resumed:resumed,",
+      "    onExit:function(){if(confirm('退出当前练习？进度已自动保存。'))location.reload();},",
+      "    onSubmit:function(res){showResult(qs,res,exam);}});",
+      "}",
+      "function showResult(qs,res,exam){",
+      "  var wrong=qs.filter(function(q){return !gradeQuestion(q,res.answers[q.id]).correct;});",
+      "  var actions=[{label:'重新练习',kind:'ghost',onClick:function(){try{localStorage.removeItem(PKEY);}catch(e){}startQuiz(exam.questions,null,exam);}}];",
+      "  if(wrong.length)actions.push({label:'重做错题 ('+wrong.length+')',kind:'warn',onClick:function(){startQuiz(wrong,{original:exam.questions.length},exam);}});",
+      "  renderResultView({root:view,scopeQuestions:qs,allQuestions:exam.questions,answers:res.answers,score:res.score,correct:res.correct,total:res.total,subtitle:exam.title+' · 授权发行包',actions:actions});",
+      "  window.scrollTo(0,0);",
+      "}",
+      "function boot(){",
+      "  var token,examRaw;try{token=localStorage.getItem(TKEY);examRaw=localStorage.getItem(EKEY);}catch(e){}",
+      "  var exam=null;",
+      "  if(token&&examRaw){var dec=decData(examRaw);try{exam=JSON.parse(dec);}catch(e){exam=null;}}",
+      "  if(exam&&exam.questions){startQuiz(exam.questions,null,exam);heartbeat();}",
+      "  else{if(token)lock();else showGate();}",
+      "}",
+      "document.addEventListener('visibilitychange',function(){if(!document.hidden)heartbeat();});",
+      "setInterval(heartbeat,5*60*1000);",
+      "boot();"
+    ].join('\n').replace('__API__',apiBase).replace('__BANK__',bankIdJS).replace('__TITLE__',titleJS);
+
+    /* 防篡改：把引擎+启动逻辑整体 base64 打包，源码不可读，阻挡随手改代码/删心跳（非绝对防线） */
+    function pack(src){return 'eval(decodeURIComponent(escape(atob("'+btoa(unescape(encodeURIComponent(src)))+'"))));';}
+    var packed=pack(engine+'\n;\n'+boot);
+
+    var html='<!doctype html>\n<html lang="zh-CN" data-theme="light">\n<head>\n<meta charset="utf-8"/>\n'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"/>\n'+
+      '<title>'+esc(title)+' · 授权发行包</title>\n'+
+      '<script>(function(){try{var p=localStorage.getItem("exam-practice:theme");var d=(p==="light"||p==="dark")?p:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",d);}catch(e){}})();<\/script>\n'+
+      '<style>'+css+'</style>\n</head>\n<body>\n'+
+      '<header class="app-header"><div class="app-header-in"><div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2l1.8 1.8 3-3.2"></path><path d="M3.5 15.2l1.8 1.8 3-3.2"></path><line x1="12.5" y1="6.5" x2="20.5" y2="6.5"></line><line x1="12.5" y1="15.5" x2="20.5" y2="15.5"></line></svg></div><span class="brand-name">'+esc(title)+'</span></div><div class="header-right"><span class="header-meta">授权发行包</span><button class="icon-btn" id="theme-btn" aria-label="切换主题">☀</button></div></div></header>\n'+
+      '<main class="container"><div id="view"></div></main>\n<div class="toast" id="toast"></div>\n'+
+      '<script>'+packed+'<\/script>\n</body>\n</html>';
+
+    var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=(title||bankId).replace(/[\\/:*?"<>|]/g,'_')+'_授权发行包.html';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    toast('已生成发行包（不含题目内容，需输入激活码才能看到）');
+  }catch(e){toast('生成失败：'+e.message);}
 }
 
 function buildOfflineHTML(exam){
