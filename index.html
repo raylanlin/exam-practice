@@ -847,7 +847,7 @@ applyTheme();syncThemeBtn();
 $('#theme-btn').onclick=function(){toggleTheme();syncThemeBtn();};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getThemePref()==='auto'){applyTheme();syncThemeBtn();}});
 $('#brand').onclick=function(){navigate('/');};
-$('#logout-btn').onclick=function(){if(confirm('退出登录？')){clearAuth();syncAuthUI();document.title='考前刷题';navigate('/');render();}};
+$('#logout-btn').onclick=function(){if(confirm('退出登录？')){stopRefreshTimer();clearAllUserData();syncAuthUI();document.title='考前刷题';navigate('/');render();}};
 $('#manage-btn').onclick=function(){navigate('/manage');};
 
 /* display density (zoom) */
@@ -909,7 +909,15 @@ var TOKEN_KEY='exam-practice:token', USER_KEY='exam-practice:user';
 function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
 function getUser(){try{return localStorage.getItem(USER_KEY)||'';}catch(e){return '';}}
 function setAuth(t,u){try{localStorage.setItem(TOKEN_KEY,t);localStorage.setItem(USER_KEY,u);}catch(e){}}
+var _refreshTimer=null,_refreshFailCount=0;
+function clearAllUserData(){
+  try{
+    for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf('exam-practice:')===0)localStorage.removeItem(k);}
+  }catch(e){}
+}
 function clearAuth(){try{localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(USER_KEY);}catch(e){}}
+function startRefreshTimer(){stopRefreshTimer();_refreshFailCount=0;_refreshTimer=setInterval(api.refreshToken,3*60*1000);}
+function stopRefreshTimer(){if(_refreshTimer){clearInterval(_refreshTimer);_refreshTimer=null;}}
 function isLoggedIn(){return !!getToken();}
 function syncAuthUI(){
   var on=isLoggedIn();
@@ -975,6 +983,19 @@ var api={
     if(!r.ok){var e=await r.json().catch(function(){return {};});throw new Error(e.error||('请求失败 ('+r.status+')'));}
     if(r.status===204)return {status:'ok'};
     return r.json();
+  },
+  async refreshToken(){
+    if(DEMO_MODE)return {token:getToken()};
+    var r=await fetch(API_BASE+'/refresh',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});
+    if(!r.ok){
+      _refreshFailCount++;
+      if(_refreshFailCount>=2){
+        clearAllUserData();syncAuthUI();navigate('/');toast('账号已在其他设备登录');
+      }
+      return null;
+    }
+    _refreshFailCount=0;
+    var j=await r.json();setAuth(j.token,getUser());return j;
   }
 };
 
@@ -1010,6 +1031,7 @@ async function doLogin(username,password,btn,err){
     var res=await api.login(username,password);
     setAuth(res.token,res.username||username);
     syncAuthUI();document.title='考前刷题';navigate('/');render();
+    if(!DEMO_MODE)startRefreshTimer();
   }catch(e){err.textContent=e.message||'登录失败';btn.disabled=false;btn.textContent='登录';}
 }
 
