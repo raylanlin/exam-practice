@@ -154,20 +154,79 @@ python3 -m json.tool <id>.json > /dev/null
 
 账号在**服务器**上的 `backend/users.json`（已 .gitignore，**代码里没有真实密码**）。
 
-```bash
-# 服务器上编辑：
-cd /root/exam-practice/backend
-cat users.json
-# 形如： { "用户名A": "密码A", "用户名B": "密码B" }   ← 占位示意，按需填
+### 账号格式（支持新旧两种）
+
+```json
+{
+  "raylan": "Raylan1234",                                ← 旧格式：纯字符串密码 = 管理员
+  "scarlett": {"password": "Scarlett1234", "role": "admin"},  ← 新格式
+  "buyer_tom": {
+    "password": "TomPass123",
+    "role": "buyer",
+    "banks": ["gdufe-jindaishi-2026-summer-quiz1"],      ← 只能看这些题库
+    "expires": "2026-09-01"                                ← 可选，到期无法登录
+  }
+}
 ```
 
-- **加 / 改 / 删账号**：编辑 `users.json`（明文，设强密码），保存后**重启服务**生效：
-  ```bash
-  systemctl restart exam-practice   # 或你的服务名
-  ```
-- 也可用环境变量替代文件：`EXAM_USERS='{"用户名":"密码"}'`（写在 systemd 的 `Environment=`）。
-- 改了密码后，老 token 仍在有效期内可用（30 天）；要立即失效所有登录，删掉服务器上的 `backend/secret.key` 再重启（会重签密钥，所有人需重新登录）。
-- **不要**把真实密码写进 `app.py` 或提交到仓库。
+**角色能力：**
+
+| 能力 | admin | buyer |
+|------|-------|-------|
+| 看全部题库 | ✅ | ❌（只限 banks 列表） |
+| 增删题库 | ✅ | ❌ |
+| 多设备同时在线 | ✅ | ❌（新登录踢旧设备） |
+| `expires` 到期锁定 | ❌ | ✅（到期自动无法登录） |
+
+### 操作方式（无前端界面，全在服务器上）
+
+```bash
+# SSH 到服务器，编辑 users.json
+ssh root@47.250.40.117
+cd /root/exam-practice-api
+cat users.json
+nano users.json    # 改完保存
+systemctl restart exam-practice-api   # 重启生效
+```
+
+- 改了密码后老 token 仍在有效期（30 天）；要立即失效所有登录，删 `secret.key` 再重启（重签密钥）。
+- `admin` 不受单设备限制（你和咪大王的号可以同时在多设备刷题）。
+- `buyer` 每账号只能 1 设备在线新登录踢旧的（3 分钟心跳检测）。
+- **不要**把真实密码提交到仓库。`backend/users.example.json` 是模板。
+
+### 激活码（卖离线版用）
+
+激活码在服务器 `backend/codes.json`（也 .gitignore）。格式：
+
+```json
+{
+  "ABCD-EFGH": {
+    "bank": "gdufe-jindaishi-2026-summer-quiz1",
+    "note": "买家：张三",
+    "device": null,              ← 激活后自动写入设备指纹
+    "expires": "2026-09-01",
+    "revoked": false              ← 手动禁用
+  }
+}
+```
+
+一个码同时只能绑 1 个设备。同一码在新设备激活会把旧设备踢下线。
+
+```bash
+# 手动加码（服务器上运行）：
+python3 -c "
+import json, random, string
+alphabet = string.ascii_uppercase.replace('O','').replace('I','') + string.digits
+code = '-'.join(''.join(random.choices(alphabet, k=4)) for _ in range(2))
+bank = 'gdufe-jindaishi-2026-summer-quiz1'
+codes = json.load(open('/root/exam-practice-api/codes.json'))
+codes[code] = {'bank': bank, 'note': '', 'device': None, 'expires': None, 'revoked': False}
+json.dump(codes, open('/root/exam-practice-api/codes.json','w'), ensure_ascii=False, indent=2)
+print(code)
+"
+```
+
+生成后把码给买家，买家在前端点「激活码」输入即可。
 
 ---
 
