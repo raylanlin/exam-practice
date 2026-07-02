@@ -153,14 +153,28 @@ CODES_FILE = os.environ.get("CODES_FILE", os.path.join(BASE_DIR, "codes.json"))
 _codes_lock_placeholder = None
 
 
+REVOKED_CLEANUP_HOURS = 12
+
+
 def load_codes():
-    if os.path.isfile(CODES_FILE):
-        try:
-            with open(CODES_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
+    if not os.path.isfile(CODES_FILE):
+        return {}
+    try:
+        with open(CODES_FILE, "r", encoding="utf-8") as f:
+            codes = json.load(f)
+    except Exception:
+        return {}
+    # 清理已吊销超过 REVOKED_CLEANUP_HOURS 的激活码
+    cutoff = time.time() - REVOKED_CLEANUP_HOURS * 3600
+    dirty = False
+    to_delete = [k for k, v in codes.items()
+                 if v.get("revoked") and v.get("revoked_at") and v["revoked_at"] < cutoff]
+    for k in to_delete:
+        del codes[k]
+        dirty = True
+    if dirty:
+        save_codes(codes)
+    return codes
 
 
 def save_codes(codes):
@@ -506,6 +520,7 @@ def revoke_code(code):
     if code not in codes:
         return jsonify({"error": "激活码不存在"}), 404
     codes[code]["revoked"] = True
+    codes[code]["revoked_at"] = time.time()
     save_codes(codes)
     return jsonify({"status": "ok"})
 
