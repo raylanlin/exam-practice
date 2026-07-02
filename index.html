@@ -1084,6 +1084,8 @@ async function render(){
   var route=getRoute(),view=$('#view');
   syncAuthUI();
   if(!isLoggedIn()){renderLogin(view);updateHeaderMeta();window.scrollTo(0,0);return;}
+  // 已登录用户页面加载时启动 refresh 定时器
+  if(!_refreshTimer&&!DEMO_MODE)startRefreshTimer();
   view.innerHTML='<div class="empty"><div class="spinner"></div>加载中…</div>';
   // cleanup any open drawer key handler from quiz
   try{
