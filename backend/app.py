@@ -108,7 +108,8 @@ if CORS:
 # --------------------------------------------------------------------------
 def make_token(username):
     exp = int(time.time()) + TOKEN_TTL
-    msg = "%s:%d" % (username, exp)
+    ns = time.time_ns()  # 纳秒精度，确保同一秒多账号登录 token 不重复
+    msg = "%s:%d:%d" % (username, exp, ns)
     sig = hmac.new(SECRET, msg.encode("utf-8"), hashlib.sha256).hexdigest()
     raw = "%s:%s" % (msg, sig)
     return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii")
@@ -120,12 +121,18 @@ def verify_token(req):
         return None
     try:
         raw = base64.urlsafe_b64decode(auth[7:].encode("ascii")).decode("utf-8")
-        username, exp, sig = raw.rsplit(":", 2)
-        msg = "%s:%s" % (username, exp)
-        expected = hmac.new(SECRET, msg.encode("utf-8"), hashlib.sha256).hexdigest()
+        # 格式: username:exp[:nonce]:sig → 切最后一个冒号取签名
+        sig = raw.rsplit(":", 1)[-1]
+        msg_body = raw.rsplit(":", 1)[0]  # "username:exp:nonce"
+        expected = hmac.new(SECRET, msg_body.encode("utf-8"), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(sig, expected):   # 签名不符 → 伪造的 token
             return None
-        if int(exp) < time.time():                    # 过期
+        # msg_body = "username:exp"（旧格式）或 "username:exp:nonce"（新格式）
+        parts = msg_body.split(":")
+        if len(parts) < 2:
+            return None
+        username, exp_str = parts[0], parts[1]
+        if int(exp_str) < time.time():                # 过期
             return None
         if username not in USERS:
             return None
@@ -226,6 +233,7 @@ def health():
 
 # 登录限流：同一 IP 连续失败 10 次后锁 5 分钟（防暴力破解）
 _login_fails = {}
+_active_tokens = {}  # username -> current_active_token 字符串
 
 
 def login_locked(ip):
@@ -257,13 +265,35 @@ def login():
     record_login(ip, ok)
     if not ok:
         return jsonify({"error": "账号或密码错误"}), 401
-    return jsonify({"token": make_token(username), "username": username})
+
+    token = make_token(username)
+    kicked = username in _active_tokens
+    _active_tokens[username] = token
+
+    resp = {"token": token, "username": username}
+    if kicked:
+        resp["kicked_old_device"] = True
+    return jsonify(resp)
 
 
 @app.route("/api/manifest")
 @require_auth
 def get_manifest():
     return jsonify({"version": 1, "exams": list_banks()})
+
+
+@app.route("/api/refresh", methods=["POST"])
+@require_auth
+def refresh_token():
+    """用旧 token 换新 token。只有当前 _active_tokens 里的 token 才允许换。"""
+    user = request.username
+    auth = request.headers.get("Authorization", "")
+    token_str = auth[7:] if auth.startswith("Bearer ") else ""
+    if _active_tokens.get(user) != token_str:
+        return jsonify({"error": "账号已在其他设备登录，请重新登录"}), 401
+    new_token = make_token(user)
+    _active_tokens[user] = new_token
+    return jsonify({"token": new_token})
 
 
 @app.route("/api/exam/<exam_id>")
